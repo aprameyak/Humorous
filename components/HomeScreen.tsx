@@ -43,7 +43,7 @@ export default function HomeScreen({ onEnterFeed }: HomeScreenProps) {
 
       <TouchableOpacity style={styles.content} onPress={handleEnterFeedPress} activeOpacity={0.9}>
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitle}>Welcome to Humorous! 😄</Text>
+          <Text style={styles.welcomeTitle}>Welcome to Humorous!</Text>
           <Text style={styles.welcomeSubtitle}>
             Your daily dose of laughter, one swipe at a time
           </Text>
@@ -53,9 +53,6 @@ export default function HomeScreen({ onEnterFeed }: HomeScreenProps) {
           <Text style={styles.sectionTitle}>How to React</Text>
           
           <View style={styles.gestureCard}>
-            <View style={styles.gestureIcon}>
-              <Text style={styles.gestureText}>↗️</Text>
-            </View>
             <View style={styles.gestureInfo}>
               <Text style={styles.gestureTitle}>Swipe Up + Right</Text>
               <Text style={styles.gestureDescription}>Like the joke</Text>
@@ -63,9 +60,6 @@ export default function HomeScreen({ onEnterFeed }: HomeScreenProps) {
           </View>
 
           <View style={styles.gestureCard}>
-            <View style={styles.gestureIcon}>
-              <Text style={styles.gestureText}>↖️</Text>
-            </View>
             <View style={styles.gestureInfo}>
               <Text style={styles.gestureTitle}>Swipe Up + Left</Text>
               <Text style={styles.gestureDescription}>Dislike the joke</Text>
@@ -73,41 +67,15 @@ export default function HomeScreen({ onEnterFeed }: HomeScreenProps) {
           </View>
 
           <View style={styles.gestureCard}>
-            <View style={styles.gestureIcon}>
-              <Text style={styles.gestureText}>⬆️</Text>
-            </View>
             <View style={styles.gestureInfo}>
               <Text style={styles.gestureTitle}>Swipe Up/Down</Text>
               <Text style={styles.gestureDescription}>Scroll through jokes</Text>
             </View>
           </View>
         </View>
-
-        <View style={styles.featuresSection}>
-          <Text style={styles.sectionTitle}>What You'll Get</Text>
-          
-          <View style={styles.featureItem}>
-            <Text style={styles.featureIcon}>🎭</Text>
-            <Text style={styles.featureText}>Mixed jokes from AI and curated sources</Text>
-          </View>
-          
-          <View style={styles.featureItem}>
-            <Text style={styles.featureIcon}>⚡</Text>
-            <Text style={styles.featureText}>Fresh content generated every 5 minutes</Text>
-          </View>
-          
-          <View style={styles.featureItem}>
-            <Text style={styles.featureIcon}>🎯</Text>
-            <Text style={styles.featureText}>Personalized feed based on your reactions</Text>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.enterButton} onPress={handleEnterFeedPress}>
-          <Text style={styles.enterButtonText}>Start Laughing! 😂</Text>
-        </TouchableOpacity>
         
         <View style={styles.tapHint}>
-          <Text style={styles.tapHintText}>💡 Tap anywhere to enter the feed</Text>
+          <Text style={styles.tapHintText}>Tap anywhere to enter your feed</Text>
         </View>
       </TouchableOpacity>
     </SafeAreaView>
