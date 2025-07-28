@@ -7,7 +7,13 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
-import { Joke } from '../hooks/useJokes';
+interface Joke {
+  id: string;
+  text: string;
+  style: string;
+  timestamp: number;
+  source: string;
+}
 
 const { width, height } = Dimensions.get('window');
 
@@ -82,17 +88,11 @@ export default function JokeCard({ joke, onLike, onSkip }: JokeCardProps) {
     >
       {/* Main Content */}
       <View style={styles.content}>
-        <Text style={styles.setup}>{joke.setup}</Text>
+        <Text style={styles.setup}>{joke.text}</Text>
         
-        {showPunchline ? (
-          <Animated.View style={styles.punchlineContainer}>
-            <Text style={styles.punchline}>{joke.punchline}</Text>
-          </Animated.View>
-        ) : (
-          <TouchableOpacity style={styles.revealButton} onPress={handleReveal}>
-            <Text style={styles.revealText}>👆 Tap to reveal punchline</Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.punchlineContainer}>
+          <Text style={styles.punchline}>{joke.style}</Text>
+        </View>
       </View>
 
       {/* Action Buttons */}
@@ -127,9 +127,9 @@ export default function JokeCard({ joke, onLike, onSkip }: JokeCardProps) {
 
       {/* Bottom Info */}
       <View style={styles.bottomInfo}>
-        <Text style={styles.humorStyle}>#{joke.humor_style.replace('_', ' ')}</Text>
+        <Text style={styles.humorStyle}>#{joke.style.replace('_', ' ')}</Text>
         <Text style={styles.timestamp}>
-          {new Date(joke.created_at).toLocaleTimeString()}
+          {new Date(joke.timestamp).toLocaleTimeString()}
         </Text>
       </View>
 

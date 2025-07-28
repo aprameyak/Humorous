@@ -5,6 +5,7 @@ import { supabase } from './supabaseClient';
 import LoginScreen from './components/LoginScreen';
 import JokeFeed from './components/JokeFeed';
 import { Session } from '@supabase/supabase-js';
+import { backgroundJobService } from './services/backgroundJob';
 
 const { height } = Dimensions.get('window');
 
@@ -29,6 +30,14 @@ export default function App() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session);
       setSession(session);
+      
+      // Start background job when user is authenticated
+      if (session?.user) {
+        backgroundJobService.start();
+      } else {
+        backgroundJobService.stop();
+      }
+      
       setLoading(false);
     });
 
@@ -88,7 +97,11 @@ export default function App() {
     );
   }
 
-  return session ? <JokeFeed /> : <LoginScreen />;
+  return (
+    <View style={{ flex: 1 }}>
+      {session ? <JokeFeed /> : <LoginScreen />}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
