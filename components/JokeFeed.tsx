@@ -11,11 +11,14 @@ import {
   Alert,
   Animated,
 } from 'react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { supabase } from '../supabaseClient';
 import { jokeService } from '../services/jokeService';
 import { useSupabase } from '../hooks/useSupabase';
 
 const { height, width } = Dimensions.get('window');
+const SWIPE_THRESHOLD = 100; // Distance threshold for swipe
+const SWIPE_VELOCITY_THRESHOLD = 500; // Velocity threshold for quick swipes
 
 interface Joke {
   id: string;
@@ -25,7 +28,11 @@ interface Joke {
   source: string;
 }
 
-export default function JokeFeed() {
+interface JokeFeedProps {
+  onBackToHome: () => void;
+}
+
+export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
   const [jokes, setJokes] = useState<Joke[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -33,6 +40,15 @@ export default function JokeFeed() {
   const flatListRef = useRef<FlatList>(null);
   const lastScrollTime = useRef(0);
   const scrollThrottle = 1000; // 1 second between scrolls
+  
+  // Animation values for each joke
+  const swipeAnimations = useRef<Map<string, {
+    translateX: Animated.Value;
+    translateY: Animated.Value;
+    scale: Animated.Value;
+    opacity: Animated.Value;
+    rotation: Animated.Value;
+  }>>(new Map()).current;
   
   const { user } = useSupabase();
 
@@ -88,6 +104,95 @@ export default function JokeFeed() {
     }
   };
 
+  const getSwipeAnimation = (jokeId: string) => {
+    if (!swipeAnimations.has(jokeId)) {
+      swipeAnimations.set(jokeId, {
+        translateX: new Animated.Value(0),
+        translateY: new Animated.Value(0),
+        scale: new Animated.Value(1),
+        opacity: new Animated.Value(1),
+        rotation: new Animated.Value(0),
+      });
+    }
+    return swipeAnimations.get(jokeId)!;
+  };
+
+  const handleSwipeGesture = useCallback((event: any, joke: Joke) => {
+    const { translationX, translationY, velocityX, velocityY, state } = event.nativeEvent;
+    const animation = getSwipeAnimation(joke.id);
+    
+    if (state === State.ACTIVE) {
+      // Update position during swipe
+      animation.translateX.setValue(translationX);
+      animation.translateY.setValue(translationY);
+      
+      // Calculate rotation based on swipe direction
+      const rotationValue = translationX * 0.1; // Rotate based on horizontal movement
+      animation.rotation.setValue(rotationValue);
+      
+      // Scale and opacity based on swipe distance
+      const distance = Math.sqrt(translationX * translationX + translationY * translationY);
+      const scaleValue = Math.max(0.8, 1 - distance / 1000);
+      const opacityValue = Math.max(0.3, 1 - distance / 800);
+      
+      animation.scale.setValue(scaleValue);
+      animation.opacity.setValue(opacityValue);
+      
+    } else if (state === State.END) {
+      const velocity = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+      const distance = Math.sqrt(translationX * translationX + translationY * translationY);
+      
+      // Determine reaction based on swipe direction
+      let reaction: 'like' | 'dislike' | null = null;
+      
+      if (distance > SWIPE_THRESHOLD || velocity > SWIPE_VELOCITY_THRESHOLD) {
+        // Swipe up + right = like
+        if (translationY < -50 && translationX > 50) {
+          reaction = 'like';
+        }
+        // Swipe up + left = dislike
+        else if (translationY < -50 && translationX < -50) {
+          reaction = 'dislike';
+        }
+      }
+      
+      if (reaction) {
+        handleReaction(joke, reaction);
+      }
+      
+      // Animate back to center or off screen
+      Animated.parallel([
+        Animated.spring(animation.translateX, {
+          toValue: reaction ? (reaction === 'like' ? width : -width) : 0,
+          useNativeDriver: true,
+        }),
+        Animated.spring(animation.translateY, {
+          toValue: reaction ? -height : 0,
+          useNativeDriver: true,
+        }),
+        Animated.spring(animation.scale, {
+          toValue: reaction ? 0.8 : 1,
+          useNativeDriver: true,
+        }),
+        Animated.spring(animation.opacity, {
+          toValue: reaction ? 0 : 1,
+          useNativeDriver: true,
+        }),
+        Animated.spring(animation.rotation, {
+          toValue: 0,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Reset values for next swipe
+        animation.translateX.setValue(0);
+        animation.translateY.setValue(0);
+        animation.scale.setValue(1);
+        animation.opacity.setValue(1);
+        animation.rotation.setValue(0);
+      });
+    }
+  }, [currentIndex, jokes.length, handleReaction]);
+
   const handleScroll = useCallback((event: any) => {
     const now = Date.now();
     if (now - lastScrollTime.current < scrollThrottle) {
@@ -121,32 +226,55 @@ export default function JokeFeed() {
   };
 
   const renderJoke = ({ item, index }: { item: Joke; index: number }) => {
+    const animation = getSwipeAnimation(item.id);
+    
     return (
       <View style={styles.jokeContainer}>
-        <View style={styles.jokeCard}>
-          <Text style={styles.jokeText}>{item.text}</Text>
-          <View style={styles.jokeMeta}>
-            <Text style={styles.jokeStyle}>{item.style}</Text>
-            <Text style={styles.jokeSource}>{item.source}</Text>
-          </View>
-          
-          {/* Simple reaction buttons */}
-          <View style={styles.reactionButtons}>
-            <TouchableOpacity 
-              style={[styles.reactionButton, styles.dislikeButton]}
-              onPress={() => handleReaction(item, 'dislike')}
-            >
-              <Text style={styles.reactionButtonText}>👎</Text>
-            </TouchableOpacity>
+        <PanGestureHandler
+          onGestureEvent={(event) => handleSwipeGesture(event, item)}
+          onHandlerStateChange={(event) => handleSwipeGesture(event, item)}
+        >
+          <Animated.View
+            style={[
+              styles.jokeCard,
+              {
+                transform: [
+                  { translateX: animation.translateX },
+                  { translateY: animation.translateY },
+                  { scale: animation.scale },
+                  { rotate: animation.rotation.interpolate({
+                    inputRange: [-100, 0, 100],
+                    outputRange: ['-10deg', '0deg', '10deg'],
+                  }) },
+                ],
+                opacity: animation.opacity,
+              },
+            ]}
+          >
+            {/* Swipe feedback overlay */}
+            <Animated.View
+              style={[
+                styles.swipeOverlay,
+                {
+                  backgroundColor: animation.translateX.interpolate({
+                    inputRange: [-200, 0, 200],
+                    outputRange: ['#F44336', 'transparent', '#4CAF50'],
+                  }),
+                  opacity: animation.translateX.interpolate({
+                    inputRange: [-100, 0, 100],
+                    outputRange: [0.2, 0, 0.2],
+                  }),
+                },
+              ]}
+            />
             
-            <TouchableOpacity 
-              style={[styles.reactionButton, styles.likeButton]}
-              onPress={() => handleReaction(item, 'like')}
-            >
-              <Text style={styles.reactionButtonText}>👍</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            <Text style={styles.jokeText}>{item.text}</Text>
+            <View style={styles.jokeMeta}>
+              <Text style={styles.jokeStyle}>{item.style}</Text>
+              <Text style={styles.jokeSource}>{item.source}</Text>
+            </View>
+          </Animated.View>
+        </PanGestureHandler>
       </View>
     );
   };
@@ -175,7 +303,10 @@ export default function JokeFeed() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Humorous</Text>
+        <TouchableOpacity style={styles.backButton} onPress={onBackToHome}>
+          <Text style={styles.backButtonText}>← Home</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Feed</Text>
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
@@ -214,6 +345,16 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
+  },
+  backButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#333',
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 14,
   },
   headerTitle: {
     fontSize: 24,
@@ -258,6 +399,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    position: 'relative',
+  },
+  swipeOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 20,
   },
   jokeText: {
     fontSize: 24,
@@ -282,28 +432,7 @@ const styles = StyleSheet.create({
     color: '#666',
     fontStyle: 'italic',
   },
-  reactionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 30,
-  },
-  reactionButton: {
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 25,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  likeButton: {
-    backgroundColor: '#4CAF50',
-  },
-  dislikeButton: {
-    backgroundColor: '#F44336',
-  },
-  reactionButtonText: {
-    fontSize: 24,
-    color: '#fff',
-  },
+
   footer: {
     paddingVertical: 20,
     alignItems: 'center',
