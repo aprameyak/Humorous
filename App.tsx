@@ -3,14 +3,18 @@ import { StyleSheet, View, Text, ActivityIndicator, SafeAreaView, FlatList, Touc
 import * as Linking from 'expo-linking';
 import { supabase } from './supabaseClient';
 import LoginScreen from './components/LoginScreen';
+import HomeScreen from './components/HomeScreen';
 import JokeFeed from './components/JokeFeed';
 import { Session } from '@supabase/supabase-js';
+import { backgroundJobService } from './services/backgroundJob';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const { height } = Dimensions.get('window');
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showFeed, setShowFeed] = useState(false);
 
   useEffect(() => {
     // Configure URL linking
@@ -29,6 +33,15 @@ export default function App() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session);
       setSession(session);
+      
+      // Start background job when user is authenticated
+      if (session?.user) {
+        backgroundJobService.start();
+      } else {
+        backgroundJobService.stop();
+        setShowFeed(false); // Reset to home screen on logout
+      }
+      
       setLoading(false);
     });
 
@@ -77,6 +90,16 @@ export default function App() {
     };
   }, []);
 
+  const handleEnterFeed = () => {
+    console.log('App: handleEnterFeed called, setting showFeed to true');
+    setShowFeed(true);
+  };
+
+  const handleBackToHome = () => {
+    console.log('App: handleBackToHome called, setting showFeed to false');
+    setShowFeed(false);
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -88,7 +111,19 @@ export default function App() {
     );
   }
 
-  return session ? <JokeFeed /> : <LoginScreen />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {session ? (
+        showFeed ? (
+          <JokeFeed onBackToHome={handleBackToHome} />
+        ) : (
+          <HomeScreen onEnterFeed={handleEnterFeed} />
+        )
+      ) : (
+        <LoginScreen />
+      )}
+    </GestureHandlerRootView>
+  );
 }
 
 const styles = StyleSheet.create({
