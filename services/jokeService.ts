@@ -11,6 +11,7 @@ export interface Joke {
 
 class JokeService {
   private jokeCache: Joke[] = [];
+  private usedJokeIds: Set<string> = new Set();
   private lastGenerationTime = 0;
   private readonly BATCH_SIZE = 8;
   private readonly MIN_INTERVAL = 3000; // 3 seconds
@@ -18,66 +19,41 @@ class JokeService {
 
   // Get jokes for the feed with rate limiting
   async getJokesForFeed(userId: string, count: number = 5): Promise<Joke[]> {
-    console.log(`Requesting ${count} jokes, cache has ${this.jokeCache.length}`);
+    console.log(`JokeService: Requesting ${count} jokes. Cache size: ${this.jokeCache.length}, Used: ${this.usedJokeIds.size}`);
     
-    // Check if we have enough jokes in cache
-    if (this.jokeCache.length >= count) {
-      const jokes = this.jokeCache.splice(0, count);
-      console.log(`Returning ${jokes.length} jokes from cache`);
-      return jokes;
-    }
-
-    // Generate more jokes if needed
-    console.log('Cache too small, generating more jokes...');
-    await this.generateJokesBatch();
+    // Get available jokes (not used yet)
+    const availableJokes = this.jokeCache.filter(joke => !this.usedJokeIds.has(joke.id));
     
-    // Return what we have
-    const availableJokes = this.jokeCache.splice(0, Math.min(count, this.jokeCache.length));
-    console.log(`Returning ${availableJokes.length} jokes after generation`);
-    
-    // If we still don't have any jokes, create some fallback jokes
-    if (availableJokes.length === 0) {
-      console.log('No jokes available, creating fallback jokes...');
-      const fallbackJokes: Joke[] = [
-        {
-          id: 'fallback-1',
-          text: "Why don't scientists trust atoms? Because they make up everything!",
-          style: 'pun',
-          timestamp: Date.now(),
-          source: 'fallback'
-        },
-        {
-          id: 'fallback-2',
-          text: "I told my wife she was drawing her eyebrows too high. She looked surprised.",
-          style: 'observational',
-          timestamp: Date.now(),
-          source: 'fallback'
-        },
-        {
-          id: 'fallback-3',
-          text: "Why did the scarecrow win an award? He was outstanding in his field!",
-          style: 'pun',
-          timestamp: Date.now(),
-          source: 'fallback'
-        }
-      ];
-      return fallbackJokes;
+    // If we don't have enough available jokes, generate more first
+    if (availableJokes.length < count) {
+      console.log(`JokeService: Need more jokes. Available: ${availableJokes.length}, Needed: ${count}`);
+      await this.generateJokesBatch();
     }
     
-    return availableJokes;
+    // Get available jokes again after potential generation
+    const updatedAvailableJokes = this.jokeCache.filter(joke => !this.usedJokeIds.has(joke.id));
+    const jokes = updatedAvailableJokes.slice(0, Math.min(count, updatedAvailableJokes.length));
+    
+    // Mark these jokes as used
+    jokes.forEach(joke => this.usedJokeIds.add(joke.id));
+    
+    console.log(`JokeService: Returning ${jokes.length} jokes from cache`);
+    return jokes;
   }
 
   // Generate a batch of jokes from multiple sources
   async generateJokesBatch(): Promise<void> {
+    console.log('JokeService: Starting generateJokesBatch');
     const now = Date.now();
     
-    // Rate limiting: don't generate too frequently, unless cache is completely empty
-    if (now - this.lastGenerationTime < this.MIN_INTERVAL && this.jokeCache.length > 0) {
-      console.log('Rate limiting: waiting before generating more jokes');
+    // Rate limiting: don't generate too frequently, unless cache is completely empty or very small
+    if (now - this.lastGenerationTime < this.MIN_INTERVAL && this.jokeCache.length > 5) {
+      console.log('JokeService: Rate limiting: waiting before generating more jokes');
       return;
     }
 
     this.lastGenerationTime = now;
+    console.log('JokeService: Generating jokes batch...');
 
     try {
       // Fetch from external APIs and Gemini in parallel
@@ -106,10 +82,25 @@ class JokeService {
       const jokesToAdd = shuffledJokes.slice(0, spaceLeft);
       
       this.jokeCache.push(...jokesToAdd);
+      console.log(`JokeService: Added ${jokesToAdd.length} jokes to cache. Total in cache: ${this.jokeCache.length}`);
       
-      console.log(`Generated ${externalJokes.status === 'fulfilled' ? externalJokes.value.length : 0} API jokes and ${geminiJokes.status === 'fulfilled' ? geminiJokes.value.length : 0} Gemini jokes. Cache size: ${this.jokeCache.length}`);
+      // Clean up used jokes if cache is getting full
+      if (this.jokeCache.length > this.MAX_CACHE_SIZE * 0.8) {
+        this.cleanupUsedJokes();
+      }
     } catch (error) {
-      console.error('Error generating jokes batch:', error);
+      console.error('JokeService: Error generating jokes batch:', error);
+      // Ensure we have some fallback jokes if generation fails
+      if (this.jokeCache.length === 0) {
+        console.log('JokeService: Adding fallback jokes due to generation failure');
+        this.jokeCache.push({
+          id: 'fallback-error-1',
+          text: "Why did the scarecrow win an award? He was outstanding in his field!",
+          style: 'pun',
+          timestamp: Date.now(),
+          source: 'fallback'
+        });
+      }
     }
   }
 
@@ -169,7 +160,6 @@ class JokeService {
     const timestamp = Date.now();
 
     if (!config.gemini.apiKey) {
-      console.log('No Gemini API key configured');
       return jokes;
     }
 
@@ -230,7 +220,7 @@ class JokeService {
           joke_id: jokeId,
           reaction,
           humor_style: 'observational', // Default style
-          timestamp: new Date().toISOString()
+          reaction_time: new Date().toISOString()
         });
 
       if (error) {
@@ -260,6 +250,14 @@ class JokeService {
       console.error('Error checking if joke seen:', error);
       return false;
     }
+  }
+
+  // Clean up used jokes from cache
+  private cleanupUsedJokes(): void {
+    const originalLength = this.jokeCache.length;
+    this.jokeCache = this.jokeCache.filter(joke => !this.usedJokeIds.has(joke.id));
+    this.usedJokeIds.clear(); // Reset used IDs since we're cleaning up
+    console.log(`JokeService: Cleaned up cache from ${originalLength} to ${this.jokeCache.length} jokes`);
   }
 
   // Shuffle array for variety

@@ -6,6 +6,7 @@ import LoginScreen from './components/LoginScreen';
 import HomeScreen from './components/HomeScreen';
 import JokeFeed from './components/JokeFeed';
 import { Session } from '@supabase/supabase-js';
+import { backgroundJobService } from './services/backgroundJob';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const { height } = Dimensions.get('window');
@@ -33,6 +34,13 @@ export default function App() {
       console.log('Auth state changed:', event, session);
       setSession(session);
       setLoading(false);
+      
+      // Start/stop background job based on auth state
+      if (session) {
+        backgroundJobService.start();
+      } else {
+        backgroundJobService.stop();
+      }
     });
 
     // Handle deep linking

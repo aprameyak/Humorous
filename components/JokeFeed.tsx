@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -23,8 +23,8 @@ import Animated, {
 
 const { height } = Dimensions.get('window');
 
-const SWIPE_THRESHOLD = 100;
-const SWIPE_VELOCITY_THRESHOLD = 500;
+  const SWIPE_THRESHOLD = 50; // More lenient
+  const SWIPE_VELOCITY_THRESHOLD = 200; // More lenient
 
 interface JokeFeedProps {
   onBackToHome: () => void;
@@ -35,16 +35,39 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
   
-  // Animation values for swipe gestures
-  const swipeAnimations = new Map<string, {
-    translateX: Animated.SharedValue<number>;
-    translateY: Animated.SharedValue<number>;
-    scale: Animated.SharedValue<number>;
-    opacity: Animated.SharedValue<number>;
-    rotation: Animated.SharedValue<number>;
-  }>();
+  // Simplified animation values
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(1);
+
+  // Handle preloading when joke changes (no animation reset to avoid conflicts)
+  useEffect(() => {
+    console.log('currentIndex changed to:', currentIndex);
+    
+    // Preload more jokes when user is getting close to the end
+    if (currentIndex >= jokes.length - 3 && !loadingMore && jokes.length > 5 && currentIndex > 0) {
+      console.log('Preloading more jokes as user approaches end');
+      loadMoreJokes();
+    }
+  }, [currentIndex]);
+
+  // Simplified animated styles
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: translateY.value }],
+      opacity: opacity.value,
+    };
+  });
+
+  const swipeOverlayStyle = useAnimatedStyle(() => {
+    const backgroundColor = translateY.value < 0 ? '#4CAF50' : '#F44336';
+    const overlayOpacity = Math.min(Math.abs(translateY.value) / 200, 0.3);
+    
+    return {
+      backgroundColor,
+      opacity: overlayOpacity,
+    };
+  });
 
   useEffect(() => {
     loadInitialJokes();
@@ -55,10 +78,20 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
       setLoading(true);
       const userId = (await supabase.auth.getUser()).data.user?.id || 'anonymous';
       const initialJokes = await jokeService.getJokesForFeed(userId, 8);
-      setJokes(initialJokes);
+      console.log('JokeFeed: Loaded initial jokes:', initialJokes.length);
+      
+      // If we don't have enough jokes, try to load more
+      if (initialJokes.length < 5) {
+        console.log('JokeFeed: Not enough initial jokes, loading more...');
+        const moreJokes = await jokeService.getJokesForFeed(userId, 8);
+        const allJokes = [...initialJokes, ...moreJokes];
+        console.log('JokeFeed: Total jokes after loading more:', allJokes.length);
+        setJokes(allJokes);
+      } else {
+        setJokes(initialJokes);
+      }
     } catch (error) {
-      console.error('Error loading jokes:', error);
-      Alert.alert('Error', 'Failed to load jokes');
+      console.error('JokeFeed: Error loading jokes:', error);
     } finally {
       setLoading(false);
     }
@@ -71,105 +104,123 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
       setLoadingMore(true);
       const userId = (await supabase.auth.getUser()).data.user?.id || 'anonymous';
       const moreJokes = await jokeService.getJokesForFeed(userId, 5);
-      setJokes(prev => [...prev, ...moreJokes]);
+      console.log('JokeFeed: Loading more jokes:', moreJokes.length);
+      setJokes(prev => {
+        const newJokes = [...prev, ...moreJokes];
+        console.log('JokeFeed: Total jokes after loading more:', newJokes.length);
+        return newJokes;
+      });
+      return moreJokes; // Return the loaded jokes
     } catch (error) {
       console.error('Error loading more jokes:', error);
+      return [];
     } finally {
       setLoadingMore(false);
     }
   };
 
-  const getSwipeAnimation = (jokeId: string) => {
-    if (!swipeAnimations.has(jokeId)) {
-      swipeAnimations.set(jokeId, {
-        translateX: useSharedValue(0),
-        translateY: useSharedValue(0),
-        scale: useSharedValue(1),
-        opacity: useSharedValue(1),
-        rotation: useSharedValue(0),
-      });
-    }
-    return swipeAnimations.get(jokeId)!;
-  };
+  // Store last translation for mouse gesture detection
+  const lastTranslation = useRef({ x: 0, y: 0 });
 
-  const handleSwipeGesture = (jokeId: string, joke: Joke) => {
-    const animation = getSwipeAnimation(jokeId);
-    
+  const handleSwipeGesture = useCallback(() => {
     return (event: any) => {
-      const { translationX, translationY, velocityX, velocityY, state } = event.nativeEvent;
+      const { translationX, translationY, state } = event.nativeEvent;
       
       if (state === State.ACTIVE) {
-        // Update animation values during swipe
-        animation.translateX.value = translationX;
-        animation.translateY.value = translationY;
-        animation.scale.value = withSpring(0.95);
-        animation.opacity.value = withSpring(0.8);
-        animation.rotation.value = translationX * 0.1;
-      } else if (state === State.END) {
-        const distance = Math.sqrt(translationX * translationX + translationY * translationY);
-        const velocity = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+        // Update visual feedback
+        translateY.value = translationY * 0.3;
+        opacity.value = 1 - Math.abs(translationY) / 400;
         
-        let reaction: 'like' | 'dislike' | null = null;
+        // Store translation for mouse gesture detection
+        lastTranslation.current = { x: translationX, y: translationY };
         
-        // Determine reaction based on swipe direction and distance
-        if (distance > SWIPE_THRESHOLD || velocity > SWIPE_VELOCITY_THRESHOLD) {
-          if (translationY < -50 && translationX > 50) {
-            reaction = 'like';
-          } else if (translationY < -50 && translationX < -50) {
-            reaction = 'dislike';
+        // For mouse input, detect reaction during ACTIVE state if gesture is big enough
+        if (Math.abs(translationY) > 100) {
+          console.log('🚨 BIG GESTURE DETECTED during ACTIVE:', { translationX, translationY });
+          
+          let reaction: 'next' | null = null;
+          
+          if (Math.abs(translationY) > 100) {
+            reaction = 'next';
+          }
+
+          if (reaction) {
+            console.log('🚨 REACTION FROM ACTIVE STATE:', reaction);
+            
+            runOnJS(handleNextJoke)();
+            
+            // Reset immediately
+            translateY.value = 0;
+            opacity.value = 1;
           }
         }
-        
-        if (reaction) {
-          // Animate card off screen
-          animation.translateX.value = withTiming(reaction === 'like' ? 500 : -500);
-          animation.translateY.value = withTiming(-200);
-          animation.opacity.value = withTiming(0);
-          animation.scale.value = withTiming(0.8);
-          
-          // Handle reaction
-          runOnJS(handleReaction)(joke, reaction);
-          
-          // Reset animation values after animation completes
-          setTimeout(() => {
-            animation.translateX.value = 0;
-            animation.translateY.value = 0;
-            animation.scale.value = 1;
-            animation.opacity.value = 1;
-            animation.rotation.value = 0;
-          }, 300);
-        } else {
-          // Spring back to center
-          animation.translateX.value = withSpring(0);
-          animation.translateY.value = withSpring(0);
-          animation.scale.value = withSpring(1);
-          animation.opacity.value = withSpring(1);
-          animation.rotation.value = withSpring(0);
-        }
+      } else if (state === State.END || state === State.CANCELLED || state === State.FAILED) {
+      console.log('🚨 GESTURE END/CANCELLED/FAILED:', { translationX, translationY });
+      
+      let reaction: 'next' | null = null;
+      
+      // Use stored translation for detection
+      const finalY = translationY || lastTranslation.current.y;
+      
+      if (Math.abs(finalY) > 60) {
+        reaction = 'next';
       }
+      
+      if (reaction) {
+        console.log('🚨 REACTION FROM END STATE:', reaction);
+        
+        runOnJS(handleNextJoke)();
+      }
+      
+      // Reset animation
+      translateY.value = withSpring(0);
+      opacity.value = withSpring(1);
+      lastTranslation.current = { x: 0, y: 0 };
+    }
     };
-  };
+  }, [currentIndex, jokes]);
 
   const handleReaction = async (joke: Joke, reaction: 'like' | 'dislike') => {
     try {
-      const userId = (await supabase.auth.getUser()).data.user?.id || 'anonymous';
-      await jokeService.recordReaction(userId, joke.id, reaction);
+      console.log('handleReaction called:', { currentIndex, totalJokes: jokes.length, reaction });
       
-      // Move to next joke
-      setTimeout(() => {
-        if (currentIndex < jokes.length - 1) {
-          setCurrentIndex(prev => prev + 1);
-          flatListRef.current?.scrollToIndex({
-            index: currentIndex + 1,
-            animated: true,
-          });
-        } else {
-          // Load more jokes if we're at the end
-          loadMoreJokes();
-        }
-      }, 100);
+      // Record reaction in parallel, don't wait for it
+      const userId = (await supabase.auth.getUser()).data.user?.id || 'anonymous';
+      jokeService.recordReaction(userId, joke.id, reaction).catch(error => {
+        console.error('Error recording reaction:', error);
+      });
+      
+      // Always move to next joke immediately for smooth UX
+      const nextIndex = currentIndex + 1;
+      console.log('Moving to next joke:', nextIndex, 'of', jokes.length);
+      setCurrentIndex(nextIndex);
+      
+      // If we're approaching the end, load more jokes in background
+      if (nextIndex >= jokes.length - 2 && !loadingMore) {
+        console.log('Preloading more jokes in background');
+        loadMoreJokes();
+      }
     } catch (error) {
-      console.error('Error recording reaction:', error);
+      console.error('Error in handleReaction:', error);
+    }
+  };
+
+  const handleNextJoke = () => {
+    try {
+      console.log('handleNextJoke called:', { currentIndex, totalJokes: jokes.length });
+      
+      // Move to next joke without recording reaction
+      const nextIndex = currentIndex + 1;
+      console.log('Moving to next joke:', nextIndex, 'of', jokes.length);
+      setCurrentIndex(nextIndex);
+      
+      // If we're approaching the end, load more jokes in background
+      if (nextIndex >= jokes.length - 2 && !loadingMore) {
+        console.log('Preloading more jokes in background');
+        loadMoreJokes();
+      }
+    } catch (error) {
+      console.error('Error in handleNextJoke:', error);
     }
   };
 
@@ -184,47 +235,7 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
     }
   };
 
-  const renderJoke = ({ item, index }: { item: Joke; index: number }) => {
-    const animation = getSwipeAnimation(item.id);
-    
-    const animatedStyle = useAnimatedStyle(() => {
-      return {
-        transform: [
-          { translateX: animation.translateX.value },
-          { translateY: animation.translateY.value },
-          { scale: animation.scale.value },
-          { rotate: `${animation.rotation.value}deg` },
-        ],
-        opacity: animation.opacity.value,
-      };
-    });
 
-    const swipeOverlayStyle = useAnimatedStyle(() => {
-      const backgroundColor = animation.translateX.value > 0 ? '#4CAF50' : '#F44336';
-      const opacity = Math.min(Math.abs(animation.translateX.value) / 200, 0.3);
-      
-      return {
-        backgroundColor,
-        opacity,
-      };
-    });
-
-    return (
-      <PanGestureHandler onGestureEvent={handleSwipeGesture(item.id, item)}>
-        <Animated.View style={[styles.jokeCard, animatedStyle]}>
-          <View style={styles.jokeContent}>
-            <Text style={styles.jokeText}>{item.text}</Text>
-            <View style={styles.jokeMeta}>
-              <Text style={styles.jokeStyle}>{item.style}</Text>
-              <Text style={styles.jokeSource}>{item.source}</Text>
-            </View>
-          </View>
-          
-          <Animated.View style={[styles.swipeOverlay, swipeOverlayStyle]} />
-        </Animated.View>
-      </PanGestureHandler>
-    );
-  };
 
   if (loading) {
     return (
@@ -236,7 +247,7 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
       </SafeAreaView>
     );
   }
-
+  
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -249,23 +260,28 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={jokes}
-        renderItem={renderJoke}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        onEndReached={loadMoreJokes}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={
-          loadingMore ? (
-            <View style={styles.footer}>
-              <ActivityIndicator size="small" color="#FF6B6B" />
-              <Text style={styles.footerText}>Loading more jokes...</Text>
-            </View>
-          ) : null
-        }
-      />
+      <View style={styles.jokeContainer}>
+        {jokes[currentIndex] ? (
+          <PanGestureHandler onGestureEvent={handleSwipeGesture()}>
+            <Animated.View style={[styles.jokeCard, animatedStyle]}>
+              <View style={styles.jokeContent}>
+                <Text style={styles.jokeText}>{jokes[currentIndex].text}</Text>
+                <View style={styles.jokeMeta}>
+                  <Text style={styles.jokeStyle}>{jokes[currentIndex].style}</Text>
+                  <Text style={styles.jokeSource}>{jokes[currentIndex].source}</Text>
+                </View>
+              </View>
+              
+              <Animated.View style={[styles.swipeOverlay, swipeOverlayStyle]} />
+            </Animated.View>
+          </PanGestureHandler>
+        ) : (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF6B6B" />
+            <Text style={styles.loadingText}>Loading more jokes...</Text>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -274,6 +290,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1a1a1a',
+  },
+  jokeContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   header: {
     flexDirection: 'row',
@@ -323,10 +345,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#2a2a2a',
     borderRadius: 20,
     margin: 20,
-    padding: 25,
-    minHeight: 200,
+    padding: 30,
+    minHeight: 300,
     justifyContent: 'center',
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
   },
   jokeContent: {
     zIndex: 1,
@@ -371,5 +401,22 @@ const styles = StyleSheet.create({
     color: '#ccc',
     fontSize: 14,
     marginTop: 10,
+  },
+  nextJokeLoading: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(42, 42, 42, 0.9)',
+    borderRadius: 10,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nextJokeLoadingText: {
+    color: '#fff',
+    fontSize: 14,
+    marginLeft: 10,
   },
 }); 
