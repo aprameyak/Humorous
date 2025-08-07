@@ -3,21 +3,18 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { supabase } from '../supabaseClient';
 import { jokeService, Joke } from '../services/jokeService';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
   runOnJS,
 } from 'react-native-reanimated';
 
@@ -27,7 +24,7 @@ const { height } = Dimensions.get('window');
   const SWIPE_VELOCITY_THRESHOLD = 200; // More lenient
 
 interface JokeFeedProps {
-  onBackToHome: () => void;
+  readonly onBackToHome: () => void;
 }
 
 export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
@@ -122,45 +119,35 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
   // Store last translation for mouse gesture detection
   const lastTranslation = useRef({ x: 0, y: 0 });
 
-  const handleSwipeGesture = useCallback(() => {
-    return (event: any) => {
-      const { translationX, translationY, state } = event.nativeEvent;
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      const { translationY } = event;
       
-      if (state === State.ACTIVE) {
-        // Update visual feedback
-        translateY.value = translationY * 0.3;
-        opacity.value = 1 - Math.abs(translationY) / 400;
+      // Update visual feedback
+      translateY.value = translationY * 0.3;
+      opacity.value = 1 - Math.abs(translationY) / 400;
+      
+      // Store translation for mouse gesture detection
+      lastTranslation.current = { x: event.translationX, y: translationY };
+      
+      // For mouse input, detect reaction during ACTIVE state if gesture is big enough
+      if (Math.abs(translationY) > 100) {
+        console.log('🚨 BIG GESTURE DETECTED during ACTIVE:', { translationX: event.translationX, translationY });
         
-        // Store translation for mouse gesture detection
-        lastTranslation.current = { x: translationX, y: translationY };
+        runOnJS(handleNextJoke)();
         
-        // For mouse input, detect reaction during ACTIVE state if gesture is big enough
-        if (Math.abs(translationY) > 100) {
-          console.log('🚨 BIG GESTURE DETECTED during ACTIVE:', { translationX, translationY });
-          
-          let reaction: 'next' | null = null;
-          
-          if (Math.abs(translationY) > 100) {
-            reaction = 'next';
-          }
-
-          if (reaction) {
-            console.log('🚨 REACTION FROM ACTIVE STATE:', reaction);
-            
-            runOnJS(handleNextJoke)();
-            
-            // Reset immediately
-            translateY.value = 0;
-            opacity.value = 1;
-          }
-        }
-      } else if (state === State.END || state === State.CANCELLED || state === State.FAILED) {
-      console.log('🚨 GESTURE END/CANCELLED/FAILED:', { translationX, translationY });
+        // Reset immediately
+        translateY.value = 0;
+        opacity.value = 1;
+      }
+    })
+    .onEnd((event) => {
+      console.log('🚨 GESTURE END:', { translationX: event.translationX, translationY: event.translationY });
       
       let reaction: 'next' | null = null;
       
       // Use stored translation for detection
-      const finalY = translationY || lastTranslation.current.y;
+      const finalY = event.translationY || lastTranslation.current.y;
       
       if (Math.abs(finalY) > 60) {
         reaction = 'next';
@@ -176,34 +163,7 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
       translateY.value = withSpring(0);
       opacity.value = withSpring(1);
       lastTranslation.current = { x: 0, y: 0 };
-    }
-    };
-  }, [currentIndex, jokes]);
-
-  const handleReaction = async (joke: Joke, reaction: 'like' | 'dislike') => {
-    try {
-      console.log('handleReaction called:', { currentIndex, totalJokes: jokes.length, reaction });
-      
-      // Record reaction in parallel, don't wait for it
-      const userId = (await supabase.auth.getUser()).data.user?.id || 'anonymous';
-      jokeService.recordReaction(userId, joke.id, reaction).catch(error => {
-        console.error('Error recording reaction:', error);
-      });
-      
-      // Always move to next joke immediately for smooth UX
-      const nextIndex = currentIndex + 1;
-      console.log('Moving to next joke:', nextIndex, 'of', jokes.length);
-      setCurrentIndex(nextIndex);
-      
-      // If we're approaching the end, load more jokes in background
-      if (nextIndex >= jokes.length - 2 && !loadingMore) {
-        console.log('Preloading more jokes in background');
-        loadMoreJokes();
-      }
-    } catch (error) {
-      console.error('Error in handleReaction:', error);
-    }
-  };
+    });
 
   const handleNextJoke = () => {
     try {
@@ -235,8 +195,6 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
     }
   };
 
-
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -262,19 +220,15 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
 
       <View style={styles.jokeContainer}>
         {jokes[currentIndex] ? (
-          <PanGestureHandler onGestureEvent={handleSwipeGesture()}>
+          <GestureDetector gesture={panGesture}>
             <Animated.View style={[styles.jokeCard, animatedStyle]}>
               <View style={styles.jokeContent}>
                 <Text style={styles.jokeText}>{jokes[currentIndex].text}</Text>
-                <View style={styles.jokeMeta}>
-                  <Text style={styles.jokeStyle}>{jokes[currentIndex].style}</Text>
-                  <Text style={styles.jokeSource}>{jokes[currentIndex].source}</Text>
-                </View>
               </View>
               
               <Animated.View style={[styles.swipeOverlay, swipeOverlayStyle]} />
             </Animated.View>
-          </PanGestureHandler>
+          </GestureDetector>
         ) : (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FF6B6B" />
@@ -367,22 +321,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 26,
     marginBottom: 20,
-  },
-  jokeMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  jokeStyle: {
-    fontSize: 14,
-    color: '#FF6B6B',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  jokeSource: {
-    fontSize: 12,
-    color: '#888',
-    fontStyle: 'italic',
   },
   swipeOverlay: {
     position: 'absolute',
