@@ -1,30 +1,63 @@
 {
   "expo": {
     "name": "Humorous",
-    "slug": "Humorous",
+    "slug": "humorous",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1a1a1a"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.humorous.app"
+      "bundleIdentifier": "com.humorous.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "CFBundleDisplayName": "Humorous",
+        "CFBundleName": "Humorous",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true
+        },
+        "UIStatusBarStyle": "UIStatusBarStyleLightContent",
+        "UIViewControllerBasedStatusBarAppearance": false,
+        "UIBackgroundModes": ["background-processing"],
+        "NSUserTrackingUsageDescription": "This app does not track users across apps or websites."
+      },
+      "appStoreUrl": "https://apps.apple.com/app/humorous",
+      "privacyPolicyUrl": "https://humorous.app/privacy",
+      "supportUrl": "https://humorous.app/support"
     },
     "android": {
+      "package": "com.humorous.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFD700"
       },
-      "edgeToEdgeEnabled": true
+      "permissions": [
+        "INTERNET"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "com.humorous.app"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-web-browser"
@@ -32,6 +65,18 @@
     "scheme": "com.humorous.app",
     "experiments": {
       "typedRoutes": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    },
+    "owner": "your-expo-username",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id"
     }
   }
 }

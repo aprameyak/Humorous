@@ -28,7 +28,6 @@ export default function HomeScreen({ onEnterFeed }: HomeScreenProps) {
   };
 
   const handleEnterFeedPress = () => {
-    console.log('Enter feed button pressed');
     onEnterFeed();
   };
 

@@ -39,11 +39,8 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
 
   // Handle preloading when joke changes (no animation reset to avoid conflicts)
   useEffect(() => {
-    console.log('currentIndex changed to:', currentIndex);
-    
     // Preload more jokes when user is getting close to the end
     if (currentIndex >= jokes.length - 3 && !loadingMore && jokes.length > 5 && currentIndex > 0) {
-      console.log('Preloading more jokes as user approaches end');
       loadMoreJokes();
     }
   }, [currentIndex]);
@@ -75,14 +72,11 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
       setLoading(true);
       const userId = (await supabase.auth.getUser()).data.user?.id || 'anonymous';
       const initialJokes = await jokeService.getJokesForFeed(userId, 8);
-      console.log('JokeFeed: Loaded initial jokes:', initialJokes.length);
       
       // If we don't have enough jokes, try to load more
       if (initialJokes.length < 5) {
-        console.log('JokeFeed: Not enough initial jokes, loading more...');
         const moreJokes = await jokeService.getJokesForFeed(userId, 8);
         const allJokes = [...initialJokes, ...moreJokes];
-        console.log('JokeFeed: Total jokes after loading more:', allJokes.length);
         setJokes(allJokes);
       } else {
         setJokes(initialJokes);
@@ -101,10 +95,8 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
       setLoadingMore(true);
       const userId = (await supabase.auth.getUser()).data.user?.id || 'anonymous';
       const moreJokes = await jokeService.getJokesForFeed(userId, 5);
-      console.log('JokeFeed: Loading more jokes:', moreJokes.length);
       setJokes(prev => {
         const newJokes = [...prev, ...moreJokes];
-        console.log('JokeFeed: Total jokes after loading more:', newJokes.length);
         return newJokes;
       });
       return moreJokes; // Return the loaded jokes
@@ -132,8 +124,6 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
       
       // For mouse input, detect reaction during ACTIVE state if gesture is big enough
       if (Math.abs(translationY) > 100) {
-        console.log('🚨 BIG GESTURE DETECTED during ACTIVE:', { translationX: event.translationX, translationY });
-        
         runOnJS(handleNextJoke)();
         
         // Reset immediately
@@ -142,8 +132,6 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
       }
     })
     .onEnd((event) => {
-      console.log('🚨 GESTURE END:', { translationX: event.translationX, translationY: event.translationY });
-      
       let reaction: 'next' | null = null;
       
       // Use stored translation for detection
@@ -154,8 +142,6 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
       }
       
       if (reaction) {
-        console.log('🚨 REACTION FROM END STATE:', reaction);
-        
         runOnJS(handleNextJoke)();
       }
       
@@ -167,16 +153,12 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
 
   const handleNextJoke = () => {
     try {
-      console.log('handleNextJoke called:', { currentIndex, totalJokes: jokes.length });
-      
       // Move to next joke without recording reaction
       const nextIndex = currentIndex + 1;
-      console.log('Moving to next joke:', nextIndex, 'of', jokes.length);
       setCurrentIndex(nextIndex);
       
       // If we're approaching the end, load more jokes in background
       if (nextIndex >= jokes.length - 2 && !loadingMore) {
-        console.log('Preloading more jokes in background');
         loadMoreJokes();
       }
     } catch (error) {

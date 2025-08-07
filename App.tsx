@@ -19,7 +19,6 @@ export default function App() {
   useEffect(() => {
     // Configure URL linking
     const url = 'com.humorous.app://auth/callback';
-    console.log('App URL:', url);
     
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -31,7 +30,6 @@ export default function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session);
       setSession(session);
       setLoading(false);
       
@@ -45,7 +43,6 @@ export default function App() {
 
     // Handle deep linking
     const handleDeepLink = async (url: string) => {
-      console.log('Deep link received:', url);
       if (url.includes('auth/callback') || url.includes('access_token')) {
         try {
           const urlObj = new URL(url);
@@ -60,8 +57,6 @@ export default function App() {
             
             if (error) {
               console.error('Error setting session from deep link:', error);
-            } else {
-              console.log('Session set successfully from deep link:', data);
             }
           }
         } catch (error) {
@@ -100,12 +95,10 @@ export default function App() {
   }
 
   const handleEnterFeed = () => {
-    console.log('App: handleEnterFeed called, setting showFeed to true');
     setShowFeed(true);
   };
 
   const handleBackToHome = () => {
-    console.log('App: handleBackToHome called, setting showFeed to false');
     setShowFeed(false);
   };
 
