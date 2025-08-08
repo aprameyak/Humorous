@@ -26,7 +26,7 @@
         "UIStatusBarStyle": "UIStatusBarStyleLightContent",
         "UIViewControllerBasedStatusBarAppearance": false,
         "UIBackgroundModes": [
-          "background-processing"
+          "background-fetch"
         ],
         "NSUserTrackingUsageDescription": "This app does not track users across apps or websites."
       },
