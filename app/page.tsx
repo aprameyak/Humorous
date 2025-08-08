@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-function Icon({ src, alt, width, height }: { src: string; alt: string; width: number; height: number }) {
+function Icon({ src, alt, width, height }: Readonly<{ src: string; alt: string; width: number; height: number }>) {
   return (
     <img
       src={src}
@@ -8,10 +8,10 @@ function Icon({ src, alt, width, height }: { src: string; alt: string; width: nu
       width={width}
       height={height}
       style={{
-        borderRadius: '20%',
-        boxShadow: '0 2px 12px rgba(250, 204, 21, 0.15)',
-        background: '#fffbe6',
-        border: '2px solid #facc15'
+        borderRadius: '16px',
+        background: '#232326',
+        border: '2px solid #facc15',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
       }}
     />
   );
@@ -27,8 +27,8 @@ export default function Home() {
       justifyContent: 'center',
       padding: '2rem',
       fontFamily: 'Inter, sans-serif',
-      background: 'linear-gradient(135deg, #facc15 0%, #fbbf24 100%)',
-      color: '#232326'
+      background: '#18181b',
+      color: '#fafafa'
     }}>
       <div style={{
         textAlign: 'center',
@@ -45,7 +45,7 @@ export default function Home() {
           <h1 style={{
             fontSize: '3rem',
             fontWeight: 'bold',
-            color: '#f59e42',
+            color: '#facc15',
             letterSpacing: '1px'
           }}>
             Humourous
@@ -55,7 +55,7 @@ export default function Home() {
           fontSize: '1.2rem',
           marginBottom: '3rem',
           opacity: 0.95,
-          color: '#232326'
+          color: '#fafafa'
         }}>
           Welcome to Humourous – the TikTok-like joke app for endless laughs and good vibes.
         </p>
@@ -67,21 +67,60 @@ export default function Home() {
         }}>
           <Link href="/support" style={{
             padding: '1rem 2rem',
-            backgroundColor: '#f59e42',
+            backgroundColor: '#232326',
             borderRadius: '8px',
-            border: '1px solid #fde68a',
+            border: '1px solid #facc15',
             transition: 'all 0.3s ease',
             display: 'inline-block',
             fontSize: '1.1rem',
             fontWeight: '500',
-            color: '#fff',
+            color: '#facc15',
             textDecoration: 'none',
-            boxShadow: '0 2px 8px rgba(250, 204, 21, 0.10)'
+            boxShadow: '0 2px 8px rgba(0,0,0,0.10)'
           }}>
             Support
           </Link>
           <Link href="/privacy" style={{
             padding: '1rem 2rem',
-            backgroundColor: '#f59e42',
+            backgroundColor: '#232326',
             borderRadius: '8px',
-            border: '1px solid #fde68a',
+            border: '1px solid #facc15',
+            transition: 'all 0.3s ease',
+            display: 'inline-block',
+            fontSize: '1.1rem',
+            fontWeight: '500',
+            color: '#facc15',
+            textDecoration: 'none',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.10)'
+          }}>
+            Privacy Policy
+          </Link>
+        </div>
+        <div style={{
+          marginTop: '4rem',
+          padding: '2rem',
+          backgroundColor: '#232326',
+          borderRadius: '12px',
+          border: '1px solid #facc15',
+          color: '#facc15'
+        }}>
+          <h2 style={{
+            fontSize: '1.5rem',
+            marginBottom: '1rem',
+            color: '#facc15'
+          }}>
+            About Humourous
+          </h2>
+          <p style={{
+            lineHeight: '1.6',
+            opacity: 0.9,
+            fontWeight: 500,
+            color: '#fafafa'
+          }}>
+            Humourous is a scrollable, TikTok-like joke app designed to keep you laughing. Enjoy endless jokes, share your favorites, and brighten your day with humor!
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
