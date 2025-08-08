@@ -25,7 +25,9 @@
         },
         "UIStatusBarStyle": "UIStatusBarStyleLightContent",
         "UIViewControllerBasedStatusBarAppearance": false,
-        "UIBackgroundModes": ["background-processing"],
+        "UIBackgroundModes": [
+          "background-processing"
+        ],
         "NSUserTrackingUsageDescription": "This app does not track users across apps or websites."
       },
       "appStoreUrl": "https://apps.apple.com/app/humorous",
@@ -51,7 +53,10 @@
               "scheme": "com.humorous.app"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -68,15 +73,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "bd24959a-34ae-4836-9414-a1ec740f33cc"
       }
     },
-    "owner": "your-expo-username",
-    "runtimeVersion": {
-      "policy": "sdkVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/your-project-id"
-    }
+    "owner": "baldmeya"
   }
 }
