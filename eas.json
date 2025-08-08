@@ -29,7 +29,8 @@
     "production": {
       "ios": {
         "appleId": "aprameyakannan@gmail.com",
-        "appleTeamId": "F6HP93DCQ8"
+        "appleTeamId": "F6HP93DCQ8",
+        "ascAppId": "6749724481"
       }
     }
   }

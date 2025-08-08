@@ -109,10 +109,7 @@
     <string>Automatic</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
-    <key>UIBackgroundModes</key>
-    <array>
-      <string>background-fetch</string>
-    </array>
+
     <key>NSUserTrackingUsageDescription</key>
     <string>This app does not track users across apps or websites.</string>
   </dict>
