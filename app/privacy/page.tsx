@@ -1,8 +1,8 @@
 export default function PrivacyPolicyPage() {
   return (
-    <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+    <main>
       <h1>Privacy Policy</h1>
-      <p>Last Updated: 2025-08-08</p>
+      <p style={{ textAlign: 'center', fontWeight: 'bold' }}>Last Updated: 2025-08-08</p>
       <section>
         <h2>How We Handle Your Data</h2>
         <ul>
@@ -12,7 +12,9 @@ export default function PrivacyPolicyPage() {
           <li>You can request deletion of your data at any time.</li>
           <li>We comply with privacy regulations such as GDPR and CCPA.</li>
         </ul>
-        <p>For full details, visit <a href="https://humourous.app/privacy-policy" target="_blank">https://humourous.app/privacy-policy</a>.</p>
+        <p style={{ textAlign: 'center' }}>
+          For full details, visit <a href="https://humourous.app/privacy-policy" target="_blank">https://humourous.app/privacy-policy</a>.
+        </p>
       </section>
     </main>
   );

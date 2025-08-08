@@ -1,8 +1,8 @@
 export default function SupportPage() {
   return (
-    <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+    <main>
       <h1>Support</h1>
-      <p>
+      <p style={{ textAlign: 'center', fontSize: '1.1rem' }}>
         For support with the Humourous app, please contact me at <a href="mailto:aprameyakannan@gmail.com">aprameyakannan@gmail.com</a>.
       </p>
     </main>

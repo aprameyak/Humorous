@@ -2,11 +2,13 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+    <main>
       <h1>Welcome to Humourous!</h1>
-      <p>A scrollable, TikTok-like joke app.</p>
-      <nav style={{ marginTop: '2rem' }}>
-        <Link href="/support" style={{ marginRight: '2rem' }}>Support</Link>
+      <p style={{ textAlign: 'center', fontSize: '1.2rem', marginBottom: '2rem' }}>
+        A scrollable, TikTok-like joke app.
+      </p>
+      <nav>
+        <Link href="/support">Support</Link>
         <Link href="/privacy">Privacy Policy</Link>
       </nav>
     </main>
