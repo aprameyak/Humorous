@@ -41,14 +41,14 @@ export default function Home() {
           gap: '1rem',
           marginBottom: '1rem'
         }}>
-          <Icon src="/icon.png" alt="Humourous Icon" width={80} height={80} />
+          <Icon src="/icon.png" alt="Humorous Icon" width={80} height={80} />
           <h1 style={{
             fontSize: '3rem',
             fontWeight: 'bold',
             color: '#facc15',
             letterSpacing: '1px'
           }}>
-            Humourous
+            Humorous
           </h1>
         </div>
         <p style={{
@@ -57,7 +57,7 @@ export default function Home() {
           opacity: 0.95,
           color: '#fafafa'
         }}>
-          Welcome to Humourous – the TikTok-like joke app for endless laughs and good vibes.
+          Welcome to Humorous – the TikTok-like joke app for endless laughs and good vibes.
         </p>
         <div style={{
           display: 'flex',
@@ -109,7 +109,7 @@ export default function Home() {
             marginBottom: '1rem',
             color: '#facc15'
           }}>
-            About Humourous
+            About Humorous
           </h2>
           <p style={{
             lineHeight: '1.6',
@@ -117,7 +117,7 @@ export default function Home() {
             fontWeight: 500,
             color: '#fafafa'
           }}>
-            Humourous is a scrollable, TikTok-like joke app designed to keep you laughing. Enjoy endless jokes, share your favorites, and brighten your day with humor!
+            Humorous is a scrollable, TikTok-like joke app designed to keep you laughing. Enjoy endless jokes, share your favorites, and brighten your day with humor!
           </p>
         </div>
       </div>

@@ -42,7 +42,7 @@ export default function Privacy() {
               Data Collection
             </h2>
             <p style={{ opacity: 0.9 }}>
-              Humourous is designed with privacy in mind. We collect minimal data to provide you with the best experience:
+              Humorous is designed with privacy in mind. We collect minimal data to provide you with the best experience:
             </p>
             <ul style={{
               marginTop: '1rem',
@@ -64,7 +64,7 @@ export default function Privacy() {
               How Data is Used
             </h2>
             <p style={{ opacity: 0.9 }}>
-              Data collected is used solely to personalize your experience and improve Humourous. We do not use your data for advertising or marketing purposes.
+              Data collected is used solely to personalize your experience and improve Humorous. We do not use your data for advertising or marketing purposes.
             </p>
             <ul style={{
               marginTop: '1rem',

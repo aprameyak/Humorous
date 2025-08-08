@@ -29,7 +29,7 @@ export default function SupportPage() {
           color: '#f59e42',
           letterSpacing: '1px'
         }}>
-          Humourous Support
+          Humorous Support
         </h1>
         <p style={{
           fontSize: '1.3rem',
@@ -70,7 +70,7 @@ export default function SupportPage() {
             lineHeight: '1.5',
             fontWeight: 500
           }}>
-            We're here to help with any questions about Humourous, technical issues, or feature requests.
+            We're here to help with any questions about Humorous, technical issues, or feature requests.
           </p>
         </div>
         <Link href="/" style={{
