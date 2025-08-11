@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
+  Linking,
 } from 'react-native';
 import { supabase } from '../supabaseClient';
 
@@ -13,9 +14,10 @@ const { width, height } = Dimensions.get('window');
 
 interface HomeScreenProps {
   onEnterFeed: () => void;
+  showDeleteAccount?: boolean;
 }
 
-export default function HomeScreen({ onEnterFeed }: HomeScreenProps) {
+export default function HomeScreen({ onEnterFeed, showDeleteAccount = false }: HomeScreenProps) {
   const handleSignOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -31,13 +33,28 @@ export default function HomeScreen({ onEnterFeed }: HomeScreenProps) {
     onEnterFeed();
   };
 
+  const handleDeleteAccount = async () => {
+    try {
+      await Linking.openURL('https://humorous.app/account/delete');
+    } catch (error) {
+      console.error('Error opening account deletion URL:', error);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Humorous</Text>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          {showDeleteAccount && (
+            <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+              <Text style={styles.signOutText}>Delete Account</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <TouchableOpacity style={styles.content} onPress={handleEnterFeedPress} activeOpacity={0.9}>
@@ -95,6 +112,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -105,6 +127,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     backgroundColor: '#333',
+  },
+  deleteButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#722f37',
+    marginRight: 10,
   },
   signOutText: {
     color: '#fff',

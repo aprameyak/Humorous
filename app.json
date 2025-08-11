@@ -24,13 +24,11 @@
           "NSAllowsLocalNetworking": true
         },
         "UIStatusBarStyle": "UIStatusBarStyleLightContent",
-        "UIViewControllerBasedStatusBarAppearance": false,
-
-        "NSUserTrackingUsageDescription": "This app does not track users across apps or websites."
+        "UIViewControllerBasedStatusBarAppearance": false
       },
       "appStoreUrl": "https://apps.apple.com/app/humorous",
-      "privacyPolicyUrl": "https://humorous.app/privacy",
-      "supportUrl": "https://humorous.app/support"
+      "privacyPolicyUrl": "https://humorous-admin.vercel.app/privacy",
+      "supportUrl": "https://humorous-admin.vercel.app/support"
     },
     "android": {
       "package": "com.humorous.app",

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator, SafeAreaView, FlatList, TouchableOpacity, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, SafeAreaView, Dimensions } from 'react-native';
 import * as Linking from 'expo-linking';
 import { supabase } from './supabaseClient';
 import LoginScreen from './components/LoginScreen';
@@ -15,10 +15,11 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [showFeed, setShowFeed] = useState(false);
+  const [guestMode, setGuestMode] = useState(false);
 
   useEffect(() => {
     // Configure URL linking
-    const url = 'com.humorous.app://auth/callback';
+    // Reserved for future deep link use if needed
     
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,7 +51,7 @@ export default function App() {
           const refresh_token = urlObj.searchParams.get('refresh_token');
           
           if (access_token && refresh_token) {
-            const { data, error } = await supabase.auth.setSession({
+            const { error } = await supabase.auth.setSession({
               access_token,
               refresh_token,
             });
@@ -98,21 +99,28 @@ export default function App() {
     setShowFeed(true);
   };
 
+  const handleContinueAsGuest = () => {
+    setGuestMode(true);
+  };
+
   const handleBackToHome = () => {
     setShowFeed(false);
   };
 
+  let content;
+  if (session || guestMode) {
+    if (showFeed) {
+      content = <JokeFeed onBackToHome={handleBackToHome} />;
+    } else {
+      content = <HomeScreen onEnterFeed={handleEnterFeed} showDeleteAccount={!!session} />;
+    }
+  } else {
+    content = <LoginScreen onContinueAsGuest={handleContinueAsGuest} />;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      {session ? (
-        showFeed ? (
-          <JokeFeed onBackToHome={handleBackToHome} />
-        ) : (
-          <HomeScreen onEnterFeed={handleEnterFeed} />
-        )
-      ) : (
-        <LoginScreen />
-      )}
+      {content}
     </GestureHandlerRootView>
   );
 }
