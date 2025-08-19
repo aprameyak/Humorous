@@ -15,7 +15,6 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [showFeed, setShowFeed] = useState(false);
-  const [guestMode, setGuestMode] = useState(false);
 
   useEffect(() => {
     // Configure URL linking
@@ -99,23 +98,20 @@ export default function App() {
     setShowFeed(true);
   };
 
-  const handleContinueAsGuest = () => {
-    setGuestMode(true);
-  };
 
   const handleBackToHome = () => {
     setShowFeed(false);
   };
 
   let content;
-  if (session || guestMode) {
+  if (session) {
     if (showFeed) {
       content = <JokeFeed onBackToHome={handleBackToHome} />;
     } else {
-      content = <HomeScreen onEnterFeed={handleEnterFeed} showDeleteAccount={!!session} />;
+      content = <HomeScreen onEnterFeed={handleEnterFeed} showDeleteAccount />;
     }
   } else {
-    content = <LoginScreen onContinueAsGuest={handleContinueAsGuest} />;
+    content = <LoginScreen />;
   }
 
   return (

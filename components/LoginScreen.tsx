@@ -13,11 +13,7 @@ import {
 } from 'react-native';
 import { supabase } from '../supabaseClient';
 
-interface LoginScreenProps {
-  onContinueAsGuest?: () => void;
-}
-
-export default function LoginScreen({ onContinueAsGuest }: LoginScreenProps) {
+export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -143,15 +139,6 @@ export default function LoginScreen({ onContinueAsGuest }: LoginScreenProps) {
                 }
               </Text>
             </TouchableOpacity>
-            {onContinueAsGuest && (
-              <TouchableOpacity
-                style={styles.guestButton}
-                onPress={onContinueAsGuest}
-                disabled={loading}
-              >
-                <Text style={styles.guestButtonText}>Continue without an account</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
       </SafeAreaView>
@@ -216,13 +203,5 @@ const styles = StyleSheet.create({
     color: '#4285f4',
     fontSize: 14,
   },
-  guestButton: {
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  guestButtonText: {
-    color: '#bbb',
-    fontSize: 14,
-    textDecorationLine: 'underline',
-  },
+  
 });
