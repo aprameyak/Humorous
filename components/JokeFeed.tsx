@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -20,8 +20,9 @@ import Animated, {
 
 const { height } = Dimensions.get('window');
 
-  const SWIPE_THRESHOLD = 50; // More lenient
-  const SWIPE_VELOCITY_THRESHOLD = 200; // More lenient
+  // Use proportional thresholds so behavior is consistent across devices
+  const SWIPE_THRESHOLD_FRACTION = 0.10; // 10% of screen height
+  const swipeThreshold = height * SWIPE_THRESHOLD_FRACTION;
 
 interface JokeFeedProps {
   readonly onBackToHome: () => void;
@@ -39,8 +40,12 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
 
   // Handle preloading when joke changes (no animation reset to avoid conflicts)
   useEffect(() => {
-    // Preload more jokes when user is getting close to the end
-    if (currentIndex >= jokes.length - 3 && !loadingMore && jokes.length > 5 && currentIndex > 0) {
+    // Preload more jokes when user reaches halfway through current jokes
+    const halfwayPoint = Math.floor(jokes.length / 2);
+    console.log('JokeFeed: Checking preload. currentIndex=', currentIndex, 'halfwayPoint=', halfwayPoint, 'jokes.length=', jokes.length);
+    
+    if (currentIndex >= halfwayPoint && !loadingMore && jokes.length >= 4 && currentIndex > 0) {
+      console.log('JokeFeed: Reached halfway point, preloading more jokes');
       loadMoreJokes();
     }
   }, [currentIndex]);
@@ -55,7 +60,7 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
 
   const swipeOverlayStyle = useAnimatedStyle(() => {
     const backgroundColor = translateY.value < 0 ? '#4CAF50' : '#F44336';
-    const overlayOpacity = Math.min(Math.abs(translateY.value) / 200, 0.3);
+    const overlayOpacity = Math.min(Math.abs(translateY.value) / Math.max(height * 0.5, 1), 0.3);
     
     return {
       backgroundColor,
@@ -110,59 +115,90 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
 
   // Store last translation for mouse gesture detection
   const lastTranslation = useRef({ x: 0, y: 0 });
+  const jokesLengthRef = useRef(0);
+
+  useEffect(() => {
+    jokesLengthRef.current = jokes.length;
+  }, [jokes.length]);
+
+  useEffect(() => {
+    console.log('JokeFeed: Joke content check. currentIndex=', currentIndex, 'jokes[currentIndex]=', jokes[currentIndex] ? 'exists' : 'missing');
+  }, [jokes, currentIndex]);
+
+  useEffect(() => {
+    console.log('JokeFeed: currentIndex=', currentIndex, 'jokesLen=', jokes.length);
+  }, [currentIndex, jokes.length]);
+
+  const logGestureEnd = (finalY: number, isAdvancing: boolean) => {
+    console.log('JokeFeed: gestureEnd finalY=', finalY, 'isAdvancingRef.current=', isAdvancing);
+  };
+
+  const handleGestureEnd = (finalY: number) => {
+    console.log('JokeFeed: handleGestureEnd called with finalY=', finalY);
+    if (Math.abs(finalY) > swipeThreshold) {
+      console.log('JokeFeed: Swipe threshold met, calling advanceSafely');
+      advanceSafely();
+    }
+  };
 
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
-      const { translationY } = event;
-      
-      // Update visual feedback
-      translateY.value = translationY * 0.3;
-      opacity.value = 1 - Math.abs(translationY) / 400;
-      
-      // Store translation for mouse gesture detection
-      lastTranslation.current = { x: event.translationX, y: translationY };
-      
-      // For mouse input, detect reaction during ACTIVE state if gesture is big enough
-      if (Math.abs(translationY) > 100) {
-        runOnJS(handleNextJoke)();
-        
-        // Reset immediately
-        translateY.value = 0;
-        opacity.value = 1;
-      }
+      // Only animation, no complex logic
+      translateY.value = event.translationY * 0.3;
+      opacity.value = 1 - Math.abs(event.translationY) / 400;
     })
     .onEnd((event) => {
-      let reaction: 'next' | null = null;
-      
-      // Use stored translation for detection
-      const finalY = event.translationY || lastTranslation.current.y;
-      
-      if (Math.abs(finalY) > 60) {
-        reaction = 'next';
-      }
-      
-      if (reaction) {
-        runOnJS(handleNextJoke)();
-      }
-      
       // Reset animation
       translateY.value = withSpring(0);
       opacity.value = withSpring(1);
-      lastTranslation.current = { x: 0, y: 0 };
+      
+      // Handle gesture logic on JS thread
+      runOnJS(handleGestureEnd)(event.translationY);
     });
 
-  const handleNextJoke = () => {
+  const advanceSafely = async () => {
     try {
-      // Move to next joke without recording reaction
-      const nextIndex = currentIndex + 1;
-      setCurrentIndex(nextIndex);
+      console.log('JokeFeed: advanceSafely called; loadingMore=', loadingMore, 'currentIndex=', currentIndex, 'jokes.length=', jokes.length);
       
-      // If we're approaching the end, load more jokes in background
-      if (nextIndex >= jokes.length - 2 && !loadingMore) {
-        loadMoreJokes();
+      // Safety checks
+      if (loadingMore) {
+        console.log('JokeFeed: Skipping advance - loading more jokes');
+        return;
       }
+      
+      if (jokes.length === 0) {
+        console.log('JokeFeed: No jokes available');
+        return;
+      }
+      
+      if (!jokes[currentIndex]) {
+        console.log('JokeFeed: Current joke missing');
+        return;
+      }
+
+      const nextIndex = currentIndex + 1;
+
+      // If we're at or beyond the last available joke, try to load more first
+      if (nextIndex >= jokes.length) {
+        console.log('JokeFeed: Need to load more jokes');
+        const more = await loadMoreJokes();
+        console.log('JokeFeed: loadMoreJokes returned count=', Array.isArray(more) ? more.length : 'n/a');
+        if (!more || more.length === 0) {
+          console.log('JokeFeed: No more jokes available');
+          return;
+        }
+      }
+
+      // Safely advance if within bounds
+      setCurrentIndex((prev) => {
+        const candidate = prev + 1;
+        const maxIndex = Math.max(0, jokes.length - 1);
+        const newIndex = candidate <= maxIndex ? candidate : prev;
+        console.log('JokeFeed: Updating currentIndex from', prev, 'to', newIndex);
+        return newIndex;
+      });
     } catch (error) {
-      console.error('Error in handleNextJoke:', error);
+      console.error('Error in advanceSafely:', error);
     }
   };
 
@@ -188,6 +224,8 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
     );
   }
   
+  const currentJoke = jokes[currentIndex];
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -201,22 +239,22 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
       </View>
 
       <View style={styles.jokeContainer}>
-        {jokes[currentIndex] ? (
-          <GestureDetector gesture={panGesture}>
-            <Animated.View style={[styles.jokeCard, animatedStyle]}>
-              <View style={styles.jokeContent}>
-                <Text style={styles.jokeText}>{jokes[currentIndex].text}</Text>
-              </View>
-              
-              <Animated.View style={[styles.swipeOverlay, swipeOverlayStyle]} />
-            </Animated.View>
-          </GestureDetector>
-        ) : (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#FF6B6B" />
-            <Text style={styles.loadingText}>Loading more jokes...</Text>
-          </View>
-        )}
+
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.jokeCard, animatedStyle]}>
+            <View style={styles.jokeContent}>
+              {currentJoke ? (
+                <Text style={styles.jokeText}>{currentJoke.text}</Text>
+              ) : (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#FF6B6B" />
+                  <Text style={styles.loadingText}>Loading more jokes...</Text>
+                </View>
+              )}
+            </View>
+            <Animated.View style={[styles.swipeOverlay, swipeOverlayStyle]} />
+          </Animated.View>
+        </GestureDetector>
       </View>
     </SafeAreaView>
   );
@@ -233,6 +271,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

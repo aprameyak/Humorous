@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
-  Linking,
+  Alert,
 } from 'react-native';
 import { supabase } from '../supabaseClient';
 
@@ -33,12 +33,30 @@ export default function HomeScreen({ onEnterFeed, showDeleteAccount = false }: H
     onEnterFeed();
   };
 
-  const handleDeleteAccount = async () => {
-    try {
-      await Linking.openURL('https://humorous.app/account/delete');
-    } catch (error) {
-      console.error('Error opening account deletion URL:', error);
-    }
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and data. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+              if (error) {
+                Alert.alert('Error', 'Could not delete account. Please try again.');
+                return;
+              }
+              await supabase.auth.signOut();
+            } catch (e) {
+              Alert.alert('Error', 'Unexpected error deleting account.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
