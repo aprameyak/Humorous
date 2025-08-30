@@ -177,12 +177,12 @@ const styles = StyleSheet.create({
   backButton: {
     paddingHorizontal: 15,
     paddingVertical: 8,
-    minWidth: 60,
+    borderRadius: 8,
+    backgroundColor: '#333',
   },
   backButtonText: {
-    color: '#4285f4',
-    fontSize: 16,
-    fontWeight: '500',
+    color: '#fff',
+    fontSize: 14,
   },
   headerTitle: {
     fontSize: 20,
