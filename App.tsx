@@ -5,6 +5,7 @@ import { supabase } from './supabaseClient';
 import LoginScreen from './components/LoginScreen';
 import HomeScreen from './components/HomeScreen';
 import JokeFeed from './components/JokeFeed';
+import ProfileScreen from './components/ProfileScreen';
 import { Session } from '@supabase/supabase-js';
 import { backgroundJobService } from './services/backgroundJob';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -15,6 +16,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [showFeed, setShowFeed] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     // Configure URL linking
@@ -98,17 +100,30 @@ export default function App() {
     setShowFeed(true);
   };
 
-
   const handleBackToHome = () => {
     setShowFeed(false);
   };
 
+  const handleOpenProfile = () => {
+    setShowProfile(true);
+  };
+
+  const handleBackFromProfile = () => {
+    setShowProfile(false);
+  };
+
+  const handleOpenProfileFromFeed = () => {
+    setShowProfile(true);
+  };
+
   let content;
   if (session) {
-    if (showFeed) {
-      content = <JokeFeed onBackToHome={handleBackToHome} />;
+    if (showProfile) {
+      content = <ProfileScreen onBack={handleBackFromProfile} />;
+    } else if (showFeed) {
+      content = <JokeFeed onBackToHome={handleBackToHome} onOpenProfile={handleOpenProfileFromFeed} />;
     } else {
-      content = <HomeScreen onEnterFeed={handleEnterFeed} showDeleteAccount />;
+      content = <HomeScreen onEnterFeed={handleEnterFeed} onOpenProfile={handleOpenProfile} />;
     }
   } else {
     content = <LoginScreen />;

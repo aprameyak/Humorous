@@ -26,9 +26,10 @@ const { height } = Dimensions.get('window');
 
 interface JokeFeedProps {
   readonly onBackToHome: () => void;
+  readonly onOpenProfile: () => void;
 }
 
-export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
+export default function JokeFeed({ onBackToHome, onOpenProfile }: JokeFeedProps) {
   const [jokes, setJokes] = useState<Joke[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -202,16 +203,7 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-      }
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+
 
   if (loading) {
     return (
@@ -233,8 +225,8 @@ export default function JokeFeed({ onBackToHome }: JokeFeedProps) {
           <Text style={styles.backButtonText}>← Home</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Feed</Text>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutText}>Sign Out</Text>
+        <TouchableOpacity style={styles.profileButton} onPress={onOpenProfile}>
+          <Text style={styles.profileIconText}>👤</Text>
         </TouchableOpacity>
       </View>
 
@@ -296,15 +288,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  signOutButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
+  profileButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 44,
   },
-  signOutText: {
-    color: '#fff',
-    fontSize: 14,
+  profileIconText: {
+    fontSize: 20,
   },
   loadingContainer: {
     flex: 1,
