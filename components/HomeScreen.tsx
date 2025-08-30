@@ -14,65 +14,21 @@ const { width, height } = Dimensions.get('window');
 
 interface HomeScreenProps {
   onEnterFeed: () => void;
-  showDeleteAccount?: boolean;
+  onOpenProfile: () => void;
 }
 
-export default function HomeScreen({ onEnterFeed, showDeleteAccount = false }: HomeScreenProps) {
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-      }
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
+export default function HomeScreen({ onEnterFeed, onOpenProfile }: HomeScreenProps) {
   const handleEnterFeedPress = () => {
     onEnterFeed();
-  };
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'This will permanently delete your account and data. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
-              if (error) {
-                Alert.alert('Error', 'Could not delete account. Please try again.');
-                return;
-              }
-              await supabase.auth.signOut();
-            } catch (e) {
-              Alert.alert('Error', 'Unexpected error deleting account.');
-            }
-          }
-        }
-      ]
-    );
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Humorous</Text>
-        <View style={styles.headerActions}>
-          {showDeleteAccount && (
-            <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
-              <Text style={styles.signOutText}>Delete Account</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.profileButton} onPress={onOpenProfile}>
+          <Text style={styles.profileIconText}>👤</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.content} onPress={handleEnterFeedPress} activeOpacity={0.9}>
@@ -130,32 +86,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
   },
-  signOutButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
+  profileButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 44,
   },
-  deleteButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#722f37',
-    marginRight: 10,
-  },
-  signOutText: {
-    color: '#fff',
-    fontSize: 14,
+  profileIconText: {
+    fontSize: 20,
   },
   content: {
     flex: 1,
