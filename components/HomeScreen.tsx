@@ -44,24 +44,18 @@ export default function HomeScreen({ onEnterFeed, onOpenProfile }: HomeScreenPro
           
           <View style={styles.gestureCard}>
             <View style={styles.gestureInfo}>
-              <Text style={styles.gestureTitle}>Swipe Up + Right</Text>
+              <Text style={styles.gestureTitle}>Swipe Up</Text>
               <Text style={styles.gestureDescription}>Like the joke</Text>
             </View>
           </View>
 
           <View style={styles.gestureCard}>
             <View style={styles.gestureInfo}>
-              <Text style={styles.gestureTitle}>Swipe Up + Left</Text>
+              <Text style={styles.gestureTitle}>Swipe Down</Text>
               <Text style={styles.gestureDescription}>Dislike the joke</Text>
             </View>
           </View>
 
-          <View style={styles.gestureCard}>
-            <View style={styles.gestureInfo}>
-              <Text style={styles.gestureTitle}>Swipe Up/Down</Text>
-              <Text style={styles.gestureDescription}>Scroll through jokes</Text>
-            </View>
-          </View>
         </View>
         
         <View style={styles.tapHint}>

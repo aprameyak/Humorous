@@ -112,12 +112,16 @@ export default function App() {
     setShowProfile(false);
   };
 
+  const handleOpenProfileFromFeed = () => {
+    setShowProfile(true);
+  };
+
   let content;
   if (session) {
     if (showProfile) {
       content = <ProfileScreen onBack={handleBackFromProfile} />;
     } else if (showFeed) {
-      content = <JokeFeed onBackToHome={handleBackToHome} />;
+      content = <JokeFeed onBackToHome={handleBackToHome} onOpenProfile={handleOpenProfileFromFeed} />;
     } else {
       content = <HomeScreen onEnterFeed={handleEnterFeed} onOpenProfile={handleOpenProfile} />;
     }

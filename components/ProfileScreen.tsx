@@ -155,10 +155,6 @@ export default function ProfileScreen({ onBack }: ProfileScreenProps) {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.appInfo}>
-          <Text style={styles.appInfoText}>Humorous v1.0.0</Text>
-          <Text style={styles.appInfoSubtext}>Your daily dose of laughter</Text>
-        </View>
       </View>
     </SafeAreaView>
   );
