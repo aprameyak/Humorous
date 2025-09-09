@@ -2,7 +2,7 @@
   "expo": {
     "name": "Humorous",
     "slug": "humorous",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.humorous.app",
-      "buildNumber": "1",
+      "buildNumber": "4",
       "infoPlist": {
         "CFBundleDisplayName": "Humorous",
         "CFBundleName": "Humorous",
@@ -31,7 +31,7 @@
     },
     "android": {
       "package": "com.humorous.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFD700"
