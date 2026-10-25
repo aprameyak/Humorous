@@ -5,20 +5,17 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
 import { fetchExternalJokes } from '../services/jokeAPI';
 import { useSupabase } from './useSupabase';
 
-// Rate limiting variables
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
+const MIN_REQUEST_INTERVAL = 2000;
 let requestCount = 0;
-const MAX_REQUESTS_PER_MINUTE = 15; // Conservative limit
+const MAX_REQUESTS_PER_MINUTE = 15;
 let requestResetTime = 0;
 
-// Helper function to wait for a specified time
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Helper function to implement exponential backoff
 const exponentialBackoff = (attempt: number) => {
-  const baseDelay = 1000; // 1 second
-  const maxDelay = 30000; // 30 seconds
+  const baseDelay = 1000;
+  const maxDelay = 30000;
   const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
   return wait(delay);
 };
@@ -28,8 +25,6 @@ export const useJokes = () => {
   const { getTopHumorStyles } = useSupabase();
 
   const loadLikedJokes = async (): Promise<string[]> => {
-    // TODO: Implement loading liked jokes from storage/database
-    // For now, return an empty array
     return [];
   };
 
@@ -45,11 +40,9 @@ export const useJokes = () => {
     try {
       setLoading(true);
       
-      // Fetch external jokes and liked jokes to enhance the prompt
       const externalJokes = await fetchExternalJokes();
       const likedJokes = await loadLikedJokes();
 
-      // Create an enhanced prompt that incorporates external jokes and user preferences
       let prompt = `Generate a clever, short joke under 25 words in the style of ${humorStyle}. Keep it clean and modern. No politics or religion. Make it funny and relatable.`;
       
       if (likedJokes.length > 0) {
@@ -62,16 +55,13 @@ export const useJokes = () => {
 
       while (attempt < maxRetries) {
         try {
-          // Rate limiting: Check if we need to wait
           const now = Date.now();
           
-          // Reset request count every minute
           if (now - requestResetTime > 60000) {
             requestCount = 0;
             requestResetTime = now;
           }
           
-          // Check if we've exceeded the per-minute limit
           if (requestCount >= MAX_REQUESTS_PER_MINUTE) {
             const waitTime = 60000 - (now - requestResetTime);
             console.log(`Rate limit reached. Waiting ${waitTime}ms before retry...`);
@@ -80,7 +70,6 @@ export const useJokes = () => {
             requestResetTime = Date.now();
           }
           
-          // Ensure minimum interval between requests
           const timeSinceLastRequest = now - lastRequestTime;
           if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
             const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;

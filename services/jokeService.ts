@@ -14,39 +14,32 @@ class JokeService {
   private usedJokeIds: Set<string> = new Set();
   private lastGenerationTime = 0;
   private readonly BATCH_SIZE = 8;
-  private readonly MIN_INTERVAL = 3000; // 3 seconds
+  private readonly MIN_INTERVAL = 3000;
   private readonly MAX_CACHE_SIZE = 50;
 
-  // Get jokes for the feed with rate limiting
   async getJokesForFeed(userId: string, count: number = 5): Promise<Joke[]> {
     console.log(`JokeService: Requesting ${count} jokes. Cache size: ${this.jokeCache.length}, Used: ${this.usedJokeIds.size}`);
     
-    // Get available jokes (not used yet)
     const availableJokes = this.jokeCache.filter(joke => !this.usedJokeIds.has(joke.id));
     
-    // If we don't have enough available jokes, generate more first
     if (availableJokes.length < count) {
       console.log(`JokeService: Need more jokes. Available: ${availableJokes.length}, Needed: ${count}`);
       await this.generateJokesBatch();
     }
     
-    // Get available jokes again after potential generation
     const updatedAvailableJokes = this.jokeCache.filter(joke => !this.usedJokeIds.has(joke.id));
     const jokes = updatedAvailableJokes.slice(0, Math.min(count, updatedAvailableJokes.length));
     
-    // Mark these jokes as used
     jokes.forEach(joke => this.usedJokeIds.add(joke.id));
     
     console.log(`JokeService: Returning ${jokes.length} jokes from cache`);
     return jokes;
   }
 
-  // Generate a batch of jokes from multiple sources
   async generateJokesBatch(): Promise<void> {
     console.log('JokeService: Starting generateJokesBatch');
     const now = Date.now();
     
-    // Rate limiting: don't generate too frequently, unless cache is completely empty or very small
     if (now - this.lastGenerationTime < this.MIN_INTERVAL && this.jokeCache.length > 5) {
       console.log('JokeService: Rate limiting: waiting before generating more jokes');
       return;
@@ -56,7 +49,6 @@ class JokeService {
     console.log('JokeService: Generating jokes batch...');
 
     try {
-      // Fetch from external APIs and Gemini in parallel
       const [externalJokes, geminiJokes] = await Promise.allSettled([
         this.fetchExternalJokes(),
         this.generateJokesWithGemini()
@@ -64,33 +56,27 @@ class JokeService {
 
       const allJokes: Joke[] = [];
 
-      // Add external jokes
       if (externalJokes.status === 'fulfilled') {
         allJokes.push(...externalJokes.value);
       }
 
-      // Add Gemini jokes
       if (geminiJokes.status === 'fulfilled') {
         allJokes.push(...geminiJokes.value);
       }
 
-      // Shuffle the jokes for variety
       const shuffledJokes = this.shuffleArray(allJokes);
 
-      // Add to cache, respecting max size
       const spaceLeft = this.MAX_CACHE_SIZE - this.jokeCache.length;
       const jokesToAdd = shuffledJokes.slice(0, spaceLeft);
       
       this.jokeCache.push(...jokesToAdd);
       console.log(`JokeService: Added ${jokesToAdd.length} jokes to cache. Total in cache: ${this.jokeCache.length}`);
       
-      // Clean up used jokes if cache is getting full
       if (this.jokeCache.length > this.MAX_CACHE_SIZE * 0.8) {
         this.cleanupUsedJokes();
       }
     } catch (error) {
       console.error('JokeService: Error generating jokes batch:', error);
-      // Ensure we have some fallback jokes if generation fails
       if (this.jokeCache.length === 0) {
         console.log('JokeService: Adding fallback jokes due to generation failure');
         this.jokeCache.push({
@@ -104,13 +90,11 @@ class JokeService {
     }
   }
 
-  // Fetch jokes from external APIs
   private async fetchExternalJokes(): Promise<Joke[]> {
     const jokes: Joke[] = [];
     const timestamp = Date.now();
 
     try {
-      // Primary API
       const response = await fetch('https://official-joke-api.appspot.com/random_ten');
       if (response.ok) {
         const data = await response.json();
@@ -128,7 +112,6 @@ class JokeService {
       console.error('Error fetching from primary API:', error);
     }
 
-    // Backup API if primary failed
     if (jokes.length === 0) {
       try {
         const backupResponse = await fetch('https://v2.jokeapi.dev/joke/Any?amount=5');
@@ -154,7 +137,6 @@ class JokeService {
     return jokes;
   }
 
-  // Generate jokes using Gemini API
   private async generateJokesWithGemini(): Promise<Joke[]> {
     const jokes: Joke[] = [];
     const timestamp = Date.now();
@@ -210,7 +192,6 @@ class JokeService {
     return jokes;
   }
 
-  // Record user reaction to a joke
   async recordReaction(userId: string, jokeId: string, reaction: 'like' | 'dislike' | 'view'): Promise<void> {
     try {
       const { error } = await supabase
@@ -219,7 +200,7 @@ class JokeService {
           user_id: userId,
           joke_id: jokeId,
           reaction,
-          humor_style: 'observational', // Default style
+          humor_style: 'observational',
           reaction_time: new Date().toISOString()
         });
 
@@ -231,7 +212,6 @@ class JokeService {
     }
   }
 
-  // Check if user has seen a joke
   async isJokeSeen(userId: string, jokeId: string): Promise<boolean> {
     try {
       const { data, error } = await supabase
@@ -252,15 +232,13 @@ class JokeService {
     }
   }
 
-  // Clean up used jokes from cache
   private cleanupUsedJokes(): void {
     const originalLength = this.jokeCache.length;
     this.jokeCache = this.jokeCache.filter(joke => !this.usedJokeIds.has(joke.id));
-    this.usedJokeIds.clear(); // Reset used IDs since we're cleaning up
+    this.usedJokeIds.clear();
     console.log(`JokeService: Cleaned up cache from ${originalLength} to ${this.jokeCache.length} jokes`);
   }
 
-  // Shuffle array for variety
   private shuffleArray<T>(array: T[]): T[] {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {

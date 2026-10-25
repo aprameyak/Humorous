@@ -18,7 +18,6 @@ export const useSupabase = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get current user
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -32,7 +31,6 @@ export const useSupabase = () => {
 
     getCurrentUser();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setUser(session?.user ?? null);
@@ -66,7 +64,6 @@ export const useSupabase = () => {
 if (data?.preferences) {
         setPreferences(data.preferences);
       } else {
-        // Initialize default preferences
         const defaultPreferences = {
           pun: 0,
           dark: 0,
@@ -77,7 +74,6 @@ if (data?.preferences) {
         };
         setPreferences(defaultPreferences);
         
-        // Check if preferences exist before saving to the database
         const { count } = await supabase
           .from('user_preferences')
           .select('*', { count: 'exact' })
@@ -141,7 +137,6 @@ if (data?.preferences) {
         console.error('Error recording reaction:', error);
       }
       
-      // For views, also update preferences slightly (passive engagement)
       if (reaction === 'view') {
         await updatePreferences(humorStyle, 0.1);
       }
@@ -158,13 +153,12 @@ if (data?.preferences) {
     return sortedStyles.slice(0, 3);
   };
 
-  // Create a simple hash from joke text for tracking
   const createJokeHash = (jokeText: string): string => {
     let hash = 0;
     for (let i = 0; i < jokeText.length; i++) {
       const char = jokeText.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+      hash = hash & hash;
     }
     return Math.abs(hash).toString();
   };
@@ -184,7 +178,7 @@ if (data?.preferences) {
           seen_at: new Date().toISOString(),
         });
 
-      if (error && error.code !== '23505') { // Ignore duplicate errors
+      if (error && error.code !== '23505') {
         console.error('Error marking joke as seen:', error);
       }
     } catch (error) {

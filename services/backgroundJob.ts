@@ -3,7 +3,7 @@ import { jokeService } from './jokeService';
 class BackgroundJobService {
   private intervalId: NodeJS.Timeout | null = null;
   private isRunning = false;
-  private readonly JOB_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  private readonly JOB_INTERVAL = 5 * 60 * 1000;
 
   start(): void {
     if (this.isRunning) {
@@ -32,14 +32,11 @@ class BackgroundJobService {
     console.log('Running background joke generation...');
     
     try {
-      // Generate multiple batches to ensure fresh content
       for (let i = 0; i < 3; i++) {
         try {
           console.log(`Generating batch ${i + 1}/3...`);
-          // Generate a mixed batch of API and Gemini jokes
           await jokeService.generateJokesBatch();
           
-          // Add delay between batches to avoid rate limiting
           if (i < 2) {
             await new Promise(resolve => setTimeout(resolve, 3000));
           }

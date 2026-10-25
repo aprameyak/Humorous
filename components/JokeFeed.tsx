@@ -20,8 +20,7 @@ import Animated, {
 
 const { height } = Dimensions.get('window');
 
-  // Use proportional thresholds so behavior is consistent across devices
-  const SWIPE_THRESHOLD_FRACTION = 0.10; // 10% of screen height
+  const SWIPE_THRESHOLD_FRACTION = 0.10;
   const swipeThreshold = height * SWIPE_THRESHOLD_FRACTION;
 
 interface JokeFeedProps {
@@ -35,13 +34,10 @@ export default function JokeFeed({ onBackToHome, onOpenProfile }: JokeFeedProps)
   const [loadingMore, setLoadingMore] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  // Simplified animation values
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(1);
 
-  // Handle preloading when joke changes (no animation reset to avoid conflicts)
   useEffect(() => {
-    // Preload more jokes when user reaches halfway through current jokes
     const halfwayPoint = Math.floor(jokes.length / 2);
     console.log('JokeFeed: Checking preload. currentIndex=', currentIndex, 'halfwayPoint=', halfwayPoint, 'jokes.length=', jokes.length);
     
@@ -51,7 +47,6 @@ export default function JokeFeed({ onBackToHome, onOpenProfile }: JokeFeedProps)
     }
   }, [currentIndex]);
 
-  // Simplified animated styles
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: translateY.value }],
@@ -79,7 +74,6 @@ export default function JokeFeed({ onBackToHome, onOpenProfile }: JokeFeedProps)
       const userId = (await supabase.auth.getUser()).data.user?.id || 'anonymous';
       const initialJokes = await jokeService.getJokesForFeed(userId, 8);
       
-      // If we don't have enough jokes, try to load more
       if (initialJokes.length < 5) {
         const moreJokes = await jokeService.getJokesForFeed(userId, 8);
         const allJokes = [...initialJokes, ...moreJokes];
@@ -105,7 +99,7 @@ export default function JokeFeed({ onBackToHome, onOpenProfile }: JokeFeedProps)
         const newJokes = [...prev, ...moreJokes];
         return newJokes;
       });
-      return moreJokes; // Return the loaded jokes
+      return moreJokes;
     } catch (error) {
       console.error('Error loading more jokes:', error);
       return [];
@@ -114,7 +108,6 @@ export default function JokeFeed({ onBackToHome, onOpenProfile }: JokeFeedProps)
     }
   };
 
-  // Store last translation for mouse gesture detection
   const lastTranslation = useRef({ x: 0, y: 0 });
   const jokesLengthRef = useRef(0);
 
@@ -144,16 +137,13 @@ export default function JokeFeed({ onBackToHome, onOpenProfile }: JokeFeedProps)
 
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
-      // Only animation, no complex logic
       translateY.value = event.translationY * 0.3;
       opacity.value = 1 - Math.abs(event.translationY) / 400;
     })
     .onEnd((event) => {
-      // Reset animation
       translateY.value = withSpring(0);
       opacity.value = withSpring(1);
       
-      // Handle gesture logic on JS thread
       runOnJS(handleGestureEnd)(event.translationY);
     });
 
@@ -161,7 +151,6 @@ export default function JokeFeed({ onBackToHome, onOpenProfile }: JokeFeedProps)
     try {
       console.log('JokeFeed: advanceSafely called; loadingMore=', loadingMore, 'currentIndex=', currentIndex, 'jokes.length=', jokes.length);
       
-      // Safety checks
       if (loadingMore) {
         console.log('JokeFeed: Skipping advance - loading more jokes');
         return;
@@ -179,7 +168,6 @@ export default function JokeFeed({ onBackToHome, onOpenProfile }: JokeFeedProps)
 
       const nextIndex = currentIndex + 1;
 
-      // If we're at or beyond the last available joke, try to load more first
       if (nextIndex >= jokes.length) {
         console.log('JokeFeed: Need to load more jokes');
         const more = await loadMoreJokes();
@@ -190,7 +178,6 @@ export default function JokeFeed({ onBackToHome, onOpenProfile }: JokeFeedProps)
         }
       }
 
-      // Safely advance if within bounds
       setCurrentIndex((prev) => {
         const candidate = prev + 1;
         const maxIndex = Math.max(0, jokes.length - 1);

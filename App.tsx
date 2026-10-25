@@ -19,23 +19,18 @@ export default function App() {
   const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
-    // Configure URL linking
-    // Reserved for future deep link use if needed
     
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
 
-    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setLoading(false);
       
-      // Start/stop background job based on auth state
       if (session) {
         backgroundJobService.start();
       } else {
@@ -43,7 +38,6 @@ export default function App() {
       }
     });
 
-    // Handle deep linking
     const handleDeepLink = async (url: string) => {
       if (url.includes('auth/callback') || url.includes('access_token')) {
         try {
@@ -67,14 +61,12 @@ export default function App() {
       }
     };
 
-    // Check if app was opened with a URL
     Linking.getInitialURL().then((url) => {
       if (url) {
         handleDeepLink(url);
       }
     });
 
-    // Listen for incoming links
     const linkingSubscription = Linking.addEventListener('url', ({ url }) => {
       handleDeepLink(url);
     });
