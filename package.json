@@ -11,10 +11,10 @@
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
     "@supabase/supabase-js": "^2.52.1",
-    "expo": "~53.0.20",
+    "expo": "~58.0.22",
     "expo-application": "~6.1.5",
-    "expo-auth-session": "~6.2.1",
-    "expo-linking": "^7.1.7",
+    "expo-auth-session": "~58.0.16",
+    "expo-linking": "^58.0.15",
     "expo-status-bar": "~2.2.3",
     "expo-web-browser": "~14.2.0",
     "react": "19.0.0",
@@ -23,7 +23,7 @@
     "react-native-gesture-handler": "~2.24.0",
     "react-native-reanimated": "~3.17.4",
     "react-native-web": "^0.20.0",
-    "expo-updates": "~0.28.17"
+    "expo-updates": "~58.0.20"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
