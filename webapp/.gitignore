@@ -17,3 +17,6 @@ yarn-error.log*
 .env.production.local
 
 .DS_Store
+
+# cloudflare
+.wrangler
