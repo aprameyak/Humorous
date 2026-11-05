@@ -15,7 +15,7 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>$(PRODUCT_NAME)</string>
+    <string>Humorous</string>
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
@@ -28,6 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>com.humorous.app</string>
+          <string>com.humorous.app</string>
         </array>
       </dict>
     </array>
@@ -39,48 +40,67 @@
     <true/>
     <key>NSAppTransportSecurity</key>
     <dict>
-      <key>NSAllowsArbitraryLoads</key>
-      <false/>
-      <key>NSAllowsLocalNetworking</key>
-      <true/>
       <key>NSExceptionDomains</key>
       <dict>
-        <key>supabase.co</key>
-        <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <false/>
-          <key>NSExceptionMinimumTLSVersion</key>
-          <string>TLSv1.2</string>
-          <key>NSExceptionRequiresForwardSecrecy</key>
-          <true/>
-        </dict>
-        <key>generativelanguage.googleapis.com</key>
-        <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <false/>
-          <key>NSExceptionMinimumTLSVersion</key>
-          <string>TLSv1.2</string>
-          <key>NSExceptionRequiresForwardSecrecy</key>
-          <true/>
-        </dict>
         <key>official-joke-api.appspot.com</key>
         <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <false/>
           <key>NSExceptionMinimumTLSVersion</key>
           <string>TLSv1.2</string>
+          <key>NSExceptionAllowsInsecureHTTPLoads</key>
+          <false/>
           <key>NSExceptionRequiresForwardSecrecy</key>
           <true/>
         </dict>
         <key>v2.jokeapi.dev</key>
         <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <false/>
           <key>NSExceptionMinimumTLSVersion</key>
           <string>TLSv1.2</string>
+          <key>NSExceptionAllowsInsecureHTTPLoads</key>
+          <false/>
           <key>NSExceptionRequiresForwardSecrecy</key>
           <true/>
         </dict>
+        <key>supabase.co</key>
+        <dict>
+          <key>NSExceptionMinimumTLSVersion</key>
+          <string>TLSv1.2</string>
+          <key>NSExceptionAllowsInsecureHTTPLoads</key>
+          <false/>
+          <key>NSExceptionRequiresForwardSecrecy</key>
+          <true/>
+        </dict>
+        <key>generativelanguage.googleapis.com</key>
+        <dict>
+          <key>NSExceptionMinimumTLSVersion</key>
+          <string>TLSv1.2</string>
+          <key>NSExceptionAllowsInsecureHTTPLoads</key>
+          <false/>
+          <key>NSExceptionRequiresForwardSecrecy</key>
+          <true/>
+        </dict>
+      </dict>
+      <key>NSAllowsArbitraryLoads</key>
+      <false/>
+      <key>NSAllowsLocalNetworking</key>
+      <true/>
+    </dict>
+    <key>RCTMetroPort</key>
+    <string>$(RCT_METRO_PORT)</string>
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+      <key>UIApplicationSupportsMultipleScenes</key>
+      <false/>
+      <key>UISceneConfigurations</key>
+      <dict>
+        <key>UIWindowSceneSessionRoleApplication</key>
+        <array>
+          <dict>
+            <key>UISceneConfigurationName</key>
+            <string>Default Configuration</string>
+            <key>UISceneDelegateClassName</key>
+            <string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+          </dict>
+        </array>
       </dict>
     </dict>
     <key>UILaunchStoryboardName</key>
