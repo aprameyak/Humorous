@@ -31,4 +31,4 @@
 
 ## Deployment
 
-Visit the live site at [https://laughalot.vercel.app](https://laughalot.vercel.app)
+Visit the live site at [https://laughalot.aprameyak.workers.dev](https://laughalot.aprameyak.workers.dev)
