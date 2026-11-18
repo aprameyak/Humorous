@@ -10,7 +10,7 @@ export default function SupportPage() {
       justifyContent: 'center',
       padding: '2rem',
       fontFamily: 'Inter, sans-serif',
-      background: 'linear-gradient(135deg, #facc15 0%, #fbbf24 100%)',
+      background: '#e3c565',
       color: '#232326'
     }}>
       <div style={{
