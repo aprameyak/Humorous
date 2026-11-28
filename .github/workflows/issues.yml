@@ -8,7 +8,7 @@ on:
       context:
         description: Area to generate issues for
         required: true
-        default: 'jokes-on-demand UX, API reliability, and docs'
+        default: 'joke feed UX, auth flows, and contributor docs'
       issue_count:
         description: Number of issues (1-5)
         required: true
@@ -22,7 +22,7 @@ jobs:
   generate:
     uses: aprameyak/issue-generator/.github/workflows/generate.yml@main
     with:
-      context: ${{ github.event.inputs.context || 'jokes-on-demand UX, API reliability, and docs' }}
+      context: ${{ github.event.inputs.context || 'joke feed UX, auth flows, and contributor docs' }}
       issue_count: ${{ github.event.inputs.issue_count || '3' }}
     secrets:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

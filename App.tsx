@@ -1,0 +1,146 @@
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View, Text, ActivityIndicator, SafeAreaView, Dimensions } from 'react-native';
+import * as Linking from 'expo-linking';
+import { supabase } from './supabaseClient';
+import LoginScreen from './components/LoginScreen';
+import HomeScreen from './components/HomeScreen';
+import JokeFeed from './components/JokeFeed';
+import ProfileScreen from './components/ProfileScreen';
+import { Session } from '@supabase/supabase-js';
+import { backgroundJobService } from './services/backgroundJob';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+const { height } = Dimensions.get('window');
+
+export default function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showFeed, setShowFeed] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+
+  useEffect(() => {
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session);
+      setLoading(false);
+      
+      if (session) {
+        backgroundJobService.start();
+      } else {
+        backgroundJobService.stop();
+      }
+    });
+
+    const handleDeepLink = async (url: string) => {
+      if (url.includes('auth/callback') || url.includes('access_token')) {
+        try {
+          const urlObj = new URL(url);
+          const access_token = urlObj.searchParams.get('access_token');
+          const refresh_token = urlObj.searchParams.get('refresh_token');
+          
+          if (access_token && refresh_token) {
+            const { error } = await supabase.auth.setSession({
+              access_token,
+              refresh_token,
+            });
+            
+            if (error) {
+              console.error('Error setting session from deep link:', error);
+            }
+          }
+        } catch (error) {
+          console.error('Error handling deep link:', error);
+        }
+      }
+    };
+
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink(url);
+      }
+    });
+
+    const linkingSubscription = Linking.addEventListener('url', ({ url }) => {
+      handleDeepLink(url);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      linkingSubscription?.remove();
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6B6B" />
+          <Text style={styles.loadingText}>Loading Humorous...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const handleEnterFeed = () => {
+    setShowFeed(true);
+  };
+
+  const handleBackToHome = () => {
+    setShowFeed(false);
+  };
+
+  const handleOpenProfile = () => {
+    setShowProfile(true);
+  };
+
+  const handleBackFromProfile = () => {
+    setShowProfile(false);
+  };
+
+  const handleOpenProfileFromFeed = () => {
+    setShowProfile(true);
+  };
+
+  let content;
+  if (session) {
+    if (showProfile) {
+      content = <ProfileScreen onBack={handleBackFromProfile} />;
+    } else if (showFeed) {
+      content = <JokeFeed onBackToHome={handleBackToHome} onOpenProfile={handleOpenProfileFromFeed} />;
+    } else {
+      content = <HomeScreen onEnterFeed={handleEnterFeed} onOpenProfile={handleOpenProfile} />;
+    }
+  } else {
+    content = <LoginScreen />;
+  }
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {content}
+    </GestureHandlerRootView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 18,
+    marginTop: 20,
+  },
+});

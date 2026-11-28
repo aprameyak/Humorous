@@ -1,34 +1,97 @@
-# LaughALot
+# Humorous
 
-![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white&style=for-the-badge)
-![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB&style=for-the-badge)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white&style=for-the-badge)
-![OpenAI](https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white&style=for-the-badge)
-![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?logo=langchain&logoColor=white&style=for-the-badge)
-![Clerk](https://img.shields.io/badge/Clerk-6C47FF?logo=clerk&logoColor=white&style=for-the-badge)
+Humorous is an iOS app for scrolling through jokes one card at a time. You sign in with email and password, open the feed, and swipe to get the next joke. It is built with Expo and React Native, uses Supabase for accounts, and is listed on the [App Store](https://apps.apple.com/app/id6749724481).
 
-## About
-
-**LaughALot** is a generative AI joke app built with **Next.js** and **React** that produces on-demand humor using **OpenAI GPT-4** via **LangChain**. Enter a topic to get a targeted joke, or leave the field blank for a random one. The API is stateless and fine-tuned with temperature, maxTokens, and top_p parameters for comedic effect. Authentication is managed by **Clerk** and deployments are automated via **GitHub Actions**.
+This repo also contains `webapp/`, a small Next.js site with the app's landing, support and privacy pages, plus LaughALot at `/laughalot`, a page that generates a joke on a topic you enter, or a random one, with Gemini.
 
 ## Features
 
-- Topic-based or random joke generation powered by OpenAI GPT-4
-- LangChain integration for prompt chaining and model parameter control
-- Clerk authentication supporting email sign-in and Gmail identity federation
-- Stateless API — no server-side session or joke storage
-- Fine-tuned response parameters (temperature, maxTokens, top_p) for humor optimization
-- Material UI interface for a clean, responsive layout
-- CI/CD pipeline via GitHub Actions deploying to Vercel
+- Full-screen joke feed: swipe up or down past a threshold to move to the next joke (`components/JokeFeed.tsx`).
+- Jokes are pulled from the public [Official Joke API](https://official-joke-api.appspot.com/random_ten), with [JokeAPI](https://v2.jokeapi.dev/) as a fallback, shuffled and cached in memory.
+- The feed preloads more jokes once you are halfway through the current batch.
+- Email and password sign up and sign in through Supabase Auth (`components/LoginScreen.tsx`).
+- Profile screen with links to support and privacy pages, log out, and account deletion via a Supabase Edge Function named `delete-account`.
+- While signed in, a timer refills the joke cache every 5 minutes (`services/backgroundJob.ts`). This runs only while the app is open; it is not an OS background task.
 
-## Technology Stack
+## Tech stack
 
-- **Frontend**: Next.js, React, TypeScript, Material UI (MUI)
-- **Backend**: Next.js API Routes
-- **AI Integration**: OpenAI GPT-4, LangChain
-- **Authentication**: Clerk
-- **CI/CD**: GitHub Actions
+- Expo SDK 53, React Native 0.79, React 19, TypeScript
+- react-native-gesture-handler and react-native-reanimated for the swipe card
+- Supabase (`@supabase/supabase-js`) for auth
+- EAS Build and EAS Update for iOS builds
+- Next.js 15 for `webapp/`, deployed to Cloudflare Workers with OpenNext
+- Google Gemini (`@google/generative-ai`) for the LaughALot page
 
-## Deployment
+## Getting started
 
-Visit the live site at [https://laughalot.aprameyakannan.com](https://laughalot.aprameyakannan.com)
+Prerequisites: Node.js 20 (the version CI uses), npm, and for native iOS runs, Xcode with CocoaPods. A Supabase project is required for sign in.
+
+```bash
+git clone https://github.com/aprameyak/Humorous
+cd Humorous
+npm install
+cp .env.example .env
+npm start
+```
+
+Fill in `.env` before starting. The variables are listed in `.env.example`:
+
+- `EXPO_PUBLIC_SUPABASE_URL`
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- `EXPO_PUBLIC_GEMINI_API_KEY` (optional, see "How it works")
+- `EXPO_PUBLIC_GOOGLE_CLIENT_ID` (listed but not read anywhere in the current code)
+
+Scripts from `package.json`:
+
+| Command | What it runs |
+| --- | --- |
+| `npm start` | `expo start` |
+| `npm run ios` | `expo run:ios` (builds the native project in `ios/`) |
+| `npm run android` | `expo run:android` |
+| `npm run web` | `expo start --web` |
+
+Type checking, as in CI: `npx tsc --noEmit`.
+
+`eas.json` defines `development`, `preview` and `production` build profiles, so a store build is `eas build -p ios --profile production` with the EAS CLI.
+
+### Web app
+
+```bash
+cd webapp
+npm install
+npm run dev
+```
+
+`npm run build` and `npm start` produce and serve a production build. The site has the routes `/`, `/support`, `/privacy` and `/laughalot`, and the API route `/api/chat`, which needs `GEMINI_API_KEY` in `webapp/.env.local`. `npm run deploy` builds with OpenNext and deploys to Cloudflare.
+
+## How it works
+
+- `App.tsx` reads the Supabase session. Without one it shows `LoginScreen`; with one it switches between `HomeScreen`, `JokeFeed` and `ProfileScreen` using local state (there is no navigation library). It also handles deep links containing `access_token` and `refresh_token` and starts or stops the background job on auth changes.
+- `services/jokeService.ts` is the joke source used by the feed. `generateJokesBatch()` fetches ten jokes from the Official Joke API (or five from JokeAPI if that returns nothing), shuffles them, and keeps up to 50 in an in-memory cache. `getJokesForFeed()` hands out jokes the session has not shown yet. Jokes are not stored in Supabase.
+- `jokeService.ts` also calls Google Gemini (`gemini-1.5-flash-latest`) for extra jokes, but it sends the API key as an `Authorization: Bearer` header instead of the `key` query parameter, so expect those requests to fail and the feed to come from the joke APIs until that is fixed.
+- `supabaseClient.ts` creates the Supabase client from the two `EXPO_PUBLIC_SUPABASE_*` variables. `config.ts` holds the Gemini settings and app constants.
+- `hooks/useJokes.ts` and `hooks/useSupabase.ts` contain an earlier design with Gemini-generated jokes, per-user humor style weights (`user_preferences`), reactions (`joke_reactions`) and seen jokes (`seen_jokes`). These hooks are not imported by any screen. The home screen describes swipe up as like and swipe down as dislike, but the feed currently treats both as "next" and does not record reactions.
+- The Supabase table schema and the `delete-account` function are not included in this repo.
+
+## Project structure
+
+```
+App.tsx              screen switching, auth session, deep links
+components/          HomeScreen, JokeFeed, LoginScreen, ProfileScreen
+services/            jokeService.ts, backgroundJob.ts, jokeAPI.js
+hooks/               useJokes.ts, useSupabase.ts (currently unused)
+supabaseClient.ts    Supabase client
+config.ts            Gemini and app settings
+ios/                 native iOS project
+app.json, eas.json   Expo and EAS configuration
+webapp/              Next.js landing, support, privacy and LaughALot pages
+PRIVACY_POLICY.md, TERMS_OF_SERVICE.md
+```
+
+## Contributing
+
+Issues and pull requests are welcome. Run `npx tsc --noEmit` in the root and `npm run build` in `webapp/` before opening a PR; CI runs both on pushes and pull requests to `main`.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
