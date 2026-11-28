@@ -31,4 +31,4 @@
 
 ## Deployment
 
-Visit the live site at [https://laughalot.aprameyak.workers.dev](https://laughalot.aprameyak.workers.dev)
+Visit the live site at [https://laughalot.aprameyakannan.com](https://laughalot.aprameyakannan.com)
